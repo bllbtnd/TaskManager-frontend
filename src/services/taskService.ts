@@ -12,6 +12,9 @@ export interface Task {
   createdAt: string;
   updatedAt: string;
   completedAt?: string;
+  timeSpentMs?: number;
+  timerStartedAt?: string;
+  timerActive?: boolean;
 }
 
 export interface TaskRequest {
@@ -41,6 +44,16 @@ export const taskService = {
     const response = await api.patch(`/projects/${projectId}/tasks/${taskId}/status`, status, {
       headers: { 'Content-Type': 'application/json' },
     });
+    return response.data;
+  },
+
+  startTimer: async (projectId: string, taskId: string): Promise<Task> => {
+    const response = await api.post(`/projects/${projectId}/tasks/${taskId}/timer/start`);
+    return response.data;
+  },
+
+  stopTimer: async (projectId: string, taskId: string, timeSpentMs: number): Promise<Task> => {
+    const response = await api.post(`/projects/${projectId}/tasks/${taskId}/timer/stop`, { timeSpentMs });
     return response.data;
   },
 

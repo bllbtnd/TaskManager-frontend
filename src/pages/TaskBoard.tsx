@@ -139,6 +139,10 @@ const TaskBoard: React.FC = () => {
     }
   };
 
+  const getTasksByStatus = (status: TaskStatus) => {
+    return tasks.filter((task) => task.status === status);
+  };
+
   const openCreateModal = () => {
     setEditingTask(null);
     form.resetFields();
@@ -146,11 +150,25 @@ const TaskBoard: React.FC = () => {
     setModalVisible(true);
   };
 
-  const getTasksByStatus = (status: TaskStatus) => {
-    return tasks.filter((task) => task.status === status);
-  };
-
   const activeTask = tasks.find((task) => task.id === activeId);
+
+  const totalTimeSpent = tasks.reduce((sum, task) => sum + (task.timeSpentMs || 0), 0);
+
+  const formatTotalTime = (ms: number) => {
+    if (!ms) return '0s';
+    const totalSeconds = Math.floor(ms / 1000);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+
+    if (hours > 0) {
+      return `${hours}h ${minutes}m ${seconds}s`;
+    }
+    if (minutes > 0) {
+      return `${minutes}m ${seconds}s`;
+    }
+    return `${seconds}s`;
+  };
 
   const statusColumns: { status: TaskStatus; title: string; color: string }[] = [
     { status: 'TO_DO', title: 'To Do', color: '#d9d9d9' },
@@ -174,8 +192,23 @@ const TaskBoard: React.FC = () => {
           <p style={{ color: '#8c8c8c', margin: 0 }}>{project?.description}</p>
         </div>
         <Button type="primary" icon={<PlusOutlined />} onClick={openCreateModal} size="large">
-          Create Task
+          Add Task
         </Button>
+      </div>
+
+      <div style={{
+        background: '#1f1f1f',
+        border: '1px solid #303030',
+        borderRadius: 8,
+        padding: 16,
+        marginBottom: 24,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ color: '#8c8c8c', fontSize: 14 }}>Total time spent on project:</span>
+          <span style={{ color: '#1890ff', fontSize: 16, fontWeight: 600 }}>
+            ⏱️ {formatTotalTime(totalTimeSpent)}
+          </span>
+        </div>
       </div>
 
       <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
@@ -207,6 +240,12 @@ const TaskBoard: React.FC = () => {
                           task={task}
                           onEdit={handleEdit}
                           onDelete={handleDelete}
+                          projectId={projectId!}
+                          onTaskUpdate={(updatedTask) => {
+                            setTasks((prev) =>
+                              prev.map((t) => (t.id === updatedTask.id ? updatedTask : t))
+                            );
+                          }}
                         />
                       ))
                     )}
