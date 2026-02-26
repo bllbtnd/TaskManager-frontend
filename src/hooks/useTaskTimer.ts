@@ -32,7 +32,7 @@ export const useTaskTimer = (taskId: string, initialTimeSpentMs: number = 0) => 
 
   // Timer interval
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: ReturnType<typeof setInterval>;
 
     if (timer.isRunning) {
       interval = setInterval(() => {
