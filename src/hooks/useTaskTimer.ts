@@ -21,11 +21,11 @@ export const useTaskTimer = (taskId: string, initialTimeSpentMs: number = 0) => 
     if (stored) {
       const { startedAt, totalMs } = JSON.parse(stored);
       const now = Date.now();
-      const elapsed = now - startedAt + totalMs;
+      const elapsed = now - startedAt;
       setTimer({
         isRunning: true,
         elapsedMs: elapsed,
-        totalMs: elapsed,
+        totalMs: totalMs + elapsed,
       });
     }
   }, [taskId, STORAGE_KEY]);
@@ -65,13 +65,14 @@ export const useTaskTimer = (taskId: string, initialTimeSpentMs: number = 0) => 
 
   const stopTimer = useCallback(() => {
     localStorage.removeItem(STORAGE_KEY);
+    const elapsed = timer.elapsedMs;
     setTimer((prev) => ({
       ...prev,
       isRunning: false,
       elapsedMs: 0,
     }));
-    return timer.totalMs;
-  }, [taskId, timer.totalMs, STORAGE_KEY]);
+    return elapsed;
+  }, [taskId, timer.elapsedMs, STORAGE_KEY]);
 
   const formatTime = (ms: number): string => {
     const totalSeconds = Math.floor(ms / 1000);
