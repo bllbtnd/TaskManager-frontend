@@ -14,7 +14,7 @@ const Register: React.FC = () => {
   const onFinish = async (values: any) => {
     setLoading(true);
     try {
-      const response = await authService.register(values);
+      await authService.register(values);
       notificationService.success('Registration successful! Please log in.');
       navigate('/login');
     } catch (error: any) {

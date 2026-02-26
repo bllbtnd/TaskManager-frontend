@@ -2,8 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Card, Table, Button, Tag, Space, Statistic, Row, Col, Tabs, Modal } from 'antd';
 import { CheckOutlined, CloseOutlined, TeamOutlined, ClockCircleOutlined, DeleteOutlined, FolderOutlined, CheckSquareOutlined } from '@ant-design/icons';
 import { userService } from '../services/userService';
-import { projectService } from '../services/projectService';
-import { taskService } from '../services/taskService';
 import { bugReportService } from '../services/bugReportService';
 import { notificationService } from '../services/notificationService';
 import type { User, UserStats } from '../services/userService';

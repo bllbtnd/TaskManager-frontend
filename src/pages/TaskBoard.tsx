@@ -202,8 +202,6 @@ const TaskBoard: React.FC = () => {
   ];
 
   const totalTasks = tasks.length;
-  const toDoTasks = getTasksByStatus('TO_DO').length;
-  const inProgressTasks = getTasksByStatus('IN_PROGRESS').length;
   const doneTasks = getTasksByStatus('DONE').length;
   const completionRate = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0;
   const avgTimePerTask = totalTasks > 0 ? Math.floor(totalTimeSpent / totalTasks) : 0;
