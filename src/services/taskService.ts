@@ -1,0 +1,50 @@
+import api from './api';
+
+export type TaskStatus = 'TO_DO' | 'IN_PROGRESS' | 'DONE';
+
+export interface Task {
+  id: string;
+  projectId: string;
+  title: string;
+  description: string;
+  status: TaskStatus;
+  assignedToId?: string;
+  createdAt: string;
+  updatedAt: string;
+  completedAt?: string;
+}
+
+export interface TaskRequest {
+  title: string;
+  description: string;
+  status?: TaskStatus;
+  assignedToId?: string;
+}
+
+export const taskService = {
+  createTask: async (projectId: string, data: TaskRequest): Promise<Task> => {
+    const response = await api.post(`/projects/${projectId}/tasks`, data);
+    return response.data;
+  },
+
+  getProjectTasks: async (projectId: string): Promise<Task[]> => {
+    const response = await api.get(`/projects/${projectId}/tasks`);
+    return response.data;
+  },
+
+  updateTask: async (projectId: string, taskId: string, data: TaskRequest): Promise<Task> => {
+    const response = await api.put(`/projects/${projectId}/tasks/${taskId}`, data);
+    return response.data;
+  },
+
+  updateTaskStatus: async (projectId: string, taskId: string, status: TaskStatus): Promise<Task> => {
+    const response = await api.patch(`/projects/${projectId}/tasks/${taskId}/status`, status, {
+      headers: { 'Content-Type': 'application/json' },
+    });
+    return response.data;
+  },
+
+  deleteTask: async (projectId: string, taskId: string): Promise<void> => {
+    await api.delete(`/projects/${projectId}/tasks/${taskId}`);
+  },
+};
