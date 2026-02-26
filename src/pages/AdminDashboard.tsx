@@ -4,8 +4,10 @@ import { CheckOutlined, CloseOutlined, TeamOutlined, ClockCircleOutlined, Delete
 import { userService } from '../services/userService';
 import { projectService } from '../services/projectService';
 import { taskService } from '../services/taskService';
+import { bugReportService } from '../services/bugReportService';
 import { notificationService } from '../services/notificationService';
 import type { User, UserStats } from '../services/userService';
+import type { BugReport } from '../services/bugReportService';
 
 interface AdminStats {
   users: number;
@@ -18,6 +20,7 @@ const AdminDashboard: React.FC = () => {
   const [allUsers, setAllUsers] = useState<User[]>([]);
   const [stats, setStats] = useState<UserStats | null>(null);
   const [adminStats, setAdminStats] = useState<AdminStats>({ users: 0, projects: 0, tasks: 0 });
+  const [bugReports, setBugReports] = useState<BugReport[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -27,16 +30,18 @@ const AdminDashboard: React.FC = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [pending, userStats, users, stats] = await Promise.all([
+      const [pending, userStats, users, stats, reports] = await Promise.all([
         userService.getPendingUsers(),
         userService.getUserStats(),
         userService.getAllUsers(),
         userService.getAdminStats(),
+        bugReportService.getAllReports(),
       ]);
       setPendingUsers(pending);
       setStats(userStats);
       setAllUsers(users);
       setAdminStats(stats);
+      setBugReports(reports);
     } catch (error) {
       notificationService.error('Failed to fetch data');
     } finally {
@@ -70,6 +75,16 @@ const AdminDashboard: React.FC = () => {
         }
       },
     });
+  };
+
+  const handleResolveBugReport = async (reportId: string) => {
+    try {
+      await bugReportService.resolveReport(reportId);
+      notificationService.success('Bug report marked as resolved');
+      fetchData();
+    } catch (error) {
+      notificationService.error('Failed to resolve bug report');
+    }
   };
 
   const pendingColumns = [
@@ -168,6 +183,58 @@ const AdminDashboard: React.FC = () => {
         >
           Delete
         </Button>
+      ),
+    },
+  ];
+
+  const bugReportColumns = [
+    {
+      title: 'Title',
+      dataIndex: 'title',
+      key: 'title',
+    },
+    {
+      title: 'Reporter',
+      dataIndex: 'createdByEmail',
+      key: 'createdByEmail',
+    },
+    {
+      title: 'Status',
+      dataIndex: 'status',
+      key: 'status',
+      render: (status: string) => {
+        const color = status === 'RESOLVED' ? 'green' : 'orange';
+        return <Tag color={color}>{status}</Tag>;
+      },
+    },
+    {
+      title: 'Created',
+      dataIndex: 'createdAt',
+      key: 'createdAt',
+      render: (date: string) => new Date(date).toLocaleDateString(),
+    },
+    {
+      title: 'Description',
+      dataIndex: 'description',
+      key: 'description',
+      render: (text: string) => (
+        <span title={text}>{text.length > 60 ? `${text.slice(0, 60)}...` : text}</span>
+      ),
+    },
+    {
+      title: 'Actions',
+      key: 'actions',
+      render: (_: any, record: BugReport) => (
+        record.status === 'OPEN' && (
+          <Button
+            type="primary"
+            icon={<CheckOutlined />}
+            onClick={() => handleResolveBugReport(record.id)}
+            size="small"
+          >
+            Resolve
+          </Button>
+        )
       ),
     },
   ];
@@ -275,6 +342,23 @@ const AdminDashboard: React.FC = () => {
                 <Table
                   columns={usersColumns}
                   dataSource={allUsers}
+                  rowKey="id"
+                  loading={loading}
+                  pagination={{ pageSize: 10 }}
+                />
+              </Card>
+            ),
+          },
+          {
+            key: 'bug-reports',
+            label: 'Bug Reports',
+            children: (
+              <Card
+                style={{ background: '#1f1f1f', border: '1px solid #303030' }}
+              >
+                <Table
+                  columns={bugReportColumns}
+                  dataSource={bugReports}
                   rowKey="id"
                   loading={loading}
                   pagination={{ pageSize: 10 }}

@@ -18,6 +18,15 @@ export interface UserStats {
   rejected: number;
 }
 
+export interface UserProfile {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: string;
+  status: string;
+}
+
 export interface UserSettings {
   id: string;
   email: string;
@@ -65,6 +74,11 @@ export const userService = {
 
   getAdminStats: async (): Promise<{ users: number; projects: number; tasks: number }> => {
     const response = await api.get('/users/admin/stats');
+    return response.data;
+  },
+
+  getCurrentUserProfile: async (): Promise<UserProfile> => {
+    const response = await api.get('/users/me');
     return response.data;
   },
 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { Button, Modal, Form, Input, Select, Spin } from 'antd';
-import { PlusOutlined } from '@ant-design/icons';
+import { Button, Modal, Form, Input, Select, Spin, Space } from 'antd';
+import { PlusOutlined, UserAddOutlined } from '@ant-design/icons';
 import { notificationService } from '../services/notificationService';
 import {
   DndContext,
@@ -16,6 +16,8 @@ import { taskService } from '../services/taskService';
 import type { Task, TaskRequest, TaskStatus } from '../services/taskService';
 import { projectService } from '../services/projectService';
 import type { Project } from '../services/projectService';
+import { userService } from '../services/userService';
+import type { UserProfile } from '../services/userService';
 import TaskCard from '../components/TaskCard';
 import DropZone from '../components/DropZone.tsx';
 
@@ -25,10 +27,13 @@ const TaskBoard: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [project, setProject] = useState<Project | null>(null);
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteLoading, setInviteLoading] = useState(false);
   const [form] = Form.useForm();
 
   const sensors = useSensors(
@@ -49,16 +54,36 @@ const TaskBoard: React.FC = () => {
     if (!projectId) return;
     setLoading(true);
     try {
-      const [projectData, tasksData] = await Promise.all([
+      const [projectData, tasksData, profile] = await Promise.all([
         projectService.getProject(projectId),
         taskService.getProjectTasks(projectId),
+        userService.getCurrentUserProfile(),
       ]);
       setProject(projectData);
       setTasks(tasksData);
+      setCurrentUser(profile);
     } catch (error) {
       notificationService.error('Failed to fetch data');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleInviteUser = async () => {
+    if (!projectId || !inviteEmail.trim()) {
+      notificationService.error('Please enter an email');
+      return;
+    }
+
+    setInviteLoading(true);
+    try {
+      await projectService.inviteUser(projectId, { email: inviteEmail.trim() });
+      notificationService.success('User invited successfully');
+      setInviteEmail('');
+    } catch (error) {
+      notificationService.error('Failed to invite user');
+    } finally {
+      setInviteLoading(false);
     }
   };
 
@@ -204,12 +229,32 @@ const TaskBoard: React.FC = () => {
     );
   }
 
+  const isOwner = currentUser && project && project.ownerId === currentUser.id;
+
   return (
     <div style={{ padding: 24 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-        <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, gap: 16 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           <h1 style={{ color: '#fff', margin: 0 }}>{project?.name || 'Project'}</h1>
           <p style={{ color: '#8c8c8c', margin: 0 }}>{project?.description}</p>
+          {isOwner && (
+            <Space.Compact>
+              <Input
+                placeholder="Invite user by email"
+                value={inviteEmail}
+                onChange={(e) => setInviteEmail(e.target.value)}
+                style={{ width: 260 }}
+              />
+              <Button
+                type="primary"
+                icon={<UserAddOutlined />}
+                loading={inviteLoading}
+                onClick={handleInviteUser}
+              >
+                Add User
+              </Button>
+            </Space.Compact>
+          )}
         </div>
         <Button type="primary" icon={<PlusOutlined />} onClick={openCreateModal} size="large">
           Add Task

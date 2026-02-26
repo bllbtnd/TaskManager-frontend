@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Row, Col, Button, Modal, Form, Input, Empty, Space, Tooltip } from 'antd';
-import { PlusOutlined, FolderOutlined, DeleteOutlined, EditOutlined, GithubOutlined } from '@ant-design/icons';
+import { Card, Row, Col, Button, Modal, Form, Input, Empty, Tooltip } from 'antd';
+import { PlusOutlined, FolderOutlined, DeleteOutlined, EditOutlined, GithubOutlined, LogoutOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { projectService } from '../services/projectService';
 import type { Project, ProjectRequest } from '../services/projectService';
+import { userService } from '../services/userService';
 import { notificationService } from '../services/notificationService';
 
 const { TextArea } = Input;
@@ -12,6 +13,7 @@ const Projects: React.FC = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [form] = Form.useForm();
   const navigate = useNavigate();
 
@@ -21,8 +23,12 @@ const Projects: React.FC = () => {
 
   const fetchProjects = async () => {
     try {
-      const data = await projectService.getUserProjects();
-      setProjects(data);
+      const [projectsData, profile] = await Promise.all([
+        projectService.getUserProjects(),
+        userService.getCurrentUserProfile(),
+      ]);
+      setProjects(projectsData);
+      setCurrentUserId(profile.id);
     } catch (error) {
       notificationService.error('Failed to fetch projects');
     }
@@ -74,6 +80,24 @@ const Projects: React.FC = () => {
     });
   };
 
+  const handleLeave = async (projectId: string) => {
+    Modal.confirm({
+      title: 'Leave Project',
+      content: 'Are you sure you want to leave this project?',
+      okText: 'Leave',
+      okType: 'danger',
+      onOk: async () => {
+        try {
+          await projectService.leaveProject(projectId);
+          notificationService.success('You left the project');
+          fetchProjects();
+        } catch (error) {
+          notificationService.error('Failed to leave project');
+        }
+      },
+    });
+  };
+
   const openCreateModal = () => {
     setEditingProject(null);
     form.resetFields();
@@ -108,7 +132,9 @@ const Projects: React.FC = () => {
         </Card>
       ) : (
         <Row gutter={[16, 16]}>
-          {projects.map((project) => (
+          {projects.map((project) => {
+            const isOwner = currentUserId && project.ownerId === currentUserId;
+            return (
             <Col xs={24} sm={12} md={8} lg={6} key={project.id}>
               <Card
                 hoverable
@@ -120,22 +146,34 @@ const Projects: React.FC = () => {
                   flexDirection: 'column',
                 }}
                 onClick={() => navigate(`/projects/${project.id}`)}
-                actions={[
-                  <EditOutlined
-                    key="edit"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleEdit(project);
-                    }}
-                  />,
-                  <DeleteOutlined
-                    key="delete"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDelete(project.id);
-                    }}
-                  />,
-                ]}
+                actions={
+                  isOwner
+                    ? [
+                        <EditOutlined
+                          key="edit"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEdit(project);
+                          }}
+                        />,
+                        <DeleteOutlined
+                          key="delete"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDelete(project.id);
+                          }}
+                        />,
+                      ]
+                    : [
+                        <LogoutOutlined
+                          key="leave"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleLeave(project.id);
+                          }}
+                        />,
+                      ]
+                }
               >
                 <div style={{ textAlign: 'center', marginBottom: 16 }}>
                   <FolderOutlined style={{ fontSize: 48, color: '#1890ff' }} />
@@ -162,7 +200,8 @@ const Projects: React.FC = () => {
                 </div>
               </Card>
             </Col>
-          ))}
+            );
+          })}
         </Row>
       )}
 

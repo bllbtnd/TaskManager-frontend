@@ -6,6 +6,7 @@ import {
   LogoutOutlined,
   DashboardOutlined,
   SettingOutlined,
+  BugOutlined,
 } from '@ant-design/icons';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { authService } from '../services/authService';
@@ -35,6 +36,12 @@ const MainLayout: React.FC = () => {
       icon: <SettingOutlined />,
       label: 'Settings',
       onClick: () => navigate('/settings'),
+    },
+    {
+      key: '/bug-report',
+      icon: <BugOutlined />,
+      label: 'Bug Report',
+      onClick: () => navigate('/bug-report'),
     },
     ...(isAdmin
       ? [

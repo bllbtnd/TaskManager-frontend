@@ -18,6 +18,10 @@ export interface ProjectRequest {
   memberIds?: string[];
 }
 
+export interface InviteUserRequest {
+  email: string;
+}
+
 export const projectService = {
   createProject: async (data: ProjectRequest): Promise<Project> => {
     const response = await api.post('/projects', data);
@@ -41,5 +45,15 @@ export const projectService = {
 
   deleteProject: async (id: string): Promise<void> => {
     await api.delete(`/projects/${id}`);
+  },
+
+  inviteUser: async (projectId: string, data: InviteUserRequest): Promise<Project> => {
+    const response = await api.post(`/projects/${projectId}/invite`, data);
+    return response.data;
+  },
+
+  leaveProject: async (projectId: string): Promise<Project> => {
+    const response = await api.post(`/projects/${projectId}/leave`);
+    return response.data;
   },
 };
