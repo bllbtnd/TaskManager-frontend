@@ -11,7 +11,6 @@ import Settings from './pages/Settings';
 import BugReport from './pages/BugReport';
 import MainLayout from './components/MainLayout';
 import ProtectedRoute from './components/ProtectedRoute';
-import { authService } from './services/authService';
 
 const App: React.FC = () => {
   return (

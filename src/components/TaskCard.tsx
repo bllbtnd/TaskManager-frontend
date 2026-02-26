@@ -31,7 +31,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete, projectId, 
 
   const timer = useTaskTimer(task.id, task.timeSpentMs || 0);
 
-  const [isToggling, setIsToggling] = useState(false);
+  const [_isToggling, setIsToggling] = useState(false);
 
   const handleStartTimer = async () => {
     setIsToggling(true);

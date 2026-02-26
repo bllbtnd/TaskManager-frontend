@@ -10,7 +10,7 @@ interface DropZoneProps {
   children: React.ReactNode;
 }
 
-const DropZone: React.FC<DropZoneProps> = ({ status, title, color, count, children }) => {
+const DropZone: React.FC<DropZoneProps> = ({ status, title, color: _color, count, children }) => {
   const { setNodeRef, isOver } = useDroppable({
     id: status,
   });
