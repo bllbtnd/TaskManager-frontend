@@ -7,6 +7,7 @@ import Register from './pages/Register';
 import Projects from './pages/Projects';
 import TaskBoard from './pages/TaskBoard';
 import AdminDashboard from './pages/AdminDashboard';
+import Settings from './pages/Settings';
 import MainLayout from './components/MainLayout';
 import ProtectedRoute from './components/ProtectedRoute';
 import { authService } from './services/authService';
@@ -40,6 +41,7 @@ const App: React.FC = () => {
             <Route index element={<Navigate to="/projects" replace />} />
             <Route path="projects" element={<Projects />} />
             <Route path="projects/:projectId" element={<TaskBoard />} />
+            <Route path="settings" element={<Settings />} />
             <Route
               path="admin"
               element={

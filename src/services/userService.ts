@@ -18,6 +18,26 @@ export interface UserStats {
   rejected: number;
 }
 
+export interface UserSettings {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: string;
+  status: string;
+  createdAt: string;
+  lastLogin: string;
+  totalProjects: number;
+  totalTasks: number;
+  totalTimeSpentMs: number;
+}
+
+export interface ChangePasswordRequest {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+}
+
 export const userService = {
   getPendingUsers: async (): Promise<User[]> => {
     const response = await api.get('/users/pending');
@@ -39,8 +59,22 @@ export const userService = {
     return response.data;
   },
 
-  getCurrentUser: async (): Promise<User> => {
-    const response = await api.get('/users/me');
+  deleteUser: async (userId: string): Promise<void> => {
+    await api.delete(`/users/${userId}`);
+  },
+
+  getAdminStats: async (): Promise<{ users: number; projects: number; tasks: number }> => {
+    const response = await api.get('/users/admin/stats');
+    return response.data;
+  },
+
+  getUserSettings: async (): Promise<UserSettings> => {
+    const response = await api.get('/users/settings');
+    return response.data;
+  },
+
+  changePassword: async (data: ChangePasswordRequest): Promise<{ message: string }> => {
+    const response = await api.post('/users/change-password', data);
     return response.data;
   },
 };

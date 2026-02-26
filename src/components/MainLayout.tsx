@@ -5,6 +5,7 @@ import {
   UserOutlined,
   LogoutOutlined,
   DashboardOutlined,
+  SettingOutlined,
 } from '@ant-design/icons';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { authService } from '../services/authService';
@@ -28,6 +29,12 @@ const MainLayout: React.FC = () => {
       icon: <ProjectOutlined />,
       label: 'Projects',
       onClick: () => navigate('/projects'),
+    },
+    {
+      key: '/settings',
+      icon: <SettingOutlined />,
+      label: 'Settings',
+      onClick: () => navigate('/settings'),
     },
     ...(isAdmin
       ? [

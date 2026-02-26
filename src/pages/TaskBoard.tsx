@@ -176,6 +176,26 @@ const TaskBoard: React.FC = () => {
     { status: 'DONE', title: 'Done', color: '#52c41a' },
   ];
 
+  const totalTasks = tasks.length;
+  const toDoTasks = getTasksByStatus('TO_DO').length;
+  const inProgressTasks = getTasksByStatus('IN_PROGRESS').length;
+  const doneTasks = getTasksByStatus('DONE').length;
+  const completionRate = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0;
+  const avgTimePerTask = totalTasks > 0 ? Math.floor(totalTimeSpent / totalTasks) : 0;
+
+  const StatCard = ({ label, value, color }: { label: string; value: string | number; color: string }) => (
+    <div style={{
+      background: '#1f1f1f',
+      border: '1px solid #303030',
+      borderRadius: 8,
+      padding: 16,
+      flex: 1,
+    }}>
+      <p style={{ color: '#8c8c8c', fontSize: 12, margin: 0, marginBottom: 8 }}>{label}</p>
+      <p style={{ color, fontSize: 24, fontWeight: 600, margin: 0 }}>{value}</p>
+    </div>
+  );
+
   if (loading) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
@@ -196,19 +216,11 @@ const TaskBoard: React.FC = () => {
         </Button>
       </div>
 
-      <div style={{
-        background: '#1f1f1f',
-        border: '1px solid #303030',
-        borderRadius: 8,
-        padding: 16,
-        marginBottom: 24,
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ color: '#8c8c8c', fontSize: 14 }}>Total time spent on project:</span>
-          <span style={{ color: '#1890ff', fontSize: 16, fontWeight: 600 }}>
-            ⏱️ {formatTotalTime(totalTimeSpent)}
-          </span>
-        </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
+        <StatCard label="Total Time Spent" value={formatTotalTime(totalTimeSpent)} color="#1890ff" />
+        <StatCard label="Total Tasks" value={totalTasks} color="#fff" />
+        <StatCard label="Avg Time per Task" value={formatTotalTime(avgTimePerTask)} color="#faad14" />
+        <StatCard label="Completion Rate" value={`${completionRate}%`} color="#52c41a" />
       </div>
 
       <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>

@@ -149,7 +149,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete, projectId, 
             fontWeight: task.timerActive ? 600 : 400,
           }}>
             {task.timerActive ? (
-              <>⏱️ {timer.formatTime(timer.totalMs)}</>
+              <>{timer.formatTime(timer.totalMs)}</>
             ) : task.timeSpentMs ? (
               <>Total: {formatTotalTime(task.timeSpentMs)}</>
             ) : null}
