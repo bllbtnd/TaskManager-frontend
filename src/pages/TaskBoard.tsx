@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { Card, Button, Modal, Form, Input, Select, Tag, Spin } from 'antd';
+import { Button, Modal, Form, Input, Select, Spin } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import { notificationService } from '../services/notificationService';
 import {
@@ -17,7 +17,7 @@ import type { Task, TaskRequest, TaskStatus } from '../services/taskService';
 import { projectService } from '../services/projectService';
 import type { Project } from '../services/projectService';
 import TaskCard from '../components/TaskCard';
-import DropZone from '../components/DropZone';
+import DropZone from '../components/DropZone.tsx';
 
 const { TextArea } = Input;
 
