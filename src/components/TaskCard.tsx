@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Card, Tag, Tooltip } from 'antd';
-import { EditOutlined, DeleteOutlined, PlayCircleOutlined, StopOutlined, CalendarOutlined, UserOutlined } from '@ant-design/icons';
+import { EditOutlined, DeleteOutlined, PlayCircleOutlined, StopOutlined, PauseOutlined, CalendarOutlined, UserOutlined } from '@ant-design/icons';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { Task } from '../services/taskService';
@@ -60,8 +60,8 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete, projectId, 
   const handleStopTimer = async () => {
     setIsToggling(true);
     try {
-      timer.stopTimer();
-      const updatedTask = await taskService.stopTimer(projectId, task.id);
+      const activeWork = timer.stopTimer();
+      const updatedTask = await taskService.stopTimer(projectId, task.id, timer.activeWorkMs, timer.totalElapsedMs);
       onTaskUpdate(updatedTask);
       notificationService.success('Timer stopped');
     } catch (error) {
@@ -108,15 +108,42 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete, projectId, 
         actions={[
           canControlTimer ? (
             task.timerActive ? (
-              <StopOutlined
-                key="stop"
-                style={{ color: '#ff4d4f', fontSize: 16 }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleStopTimer();
-                }}
-                title="Stop timer"
-              />
+              <>
+                {timer.isPaused ? (
+                  <Tooltip title="Resume work">
+                    <PlayCircleOutlined
+                      key="resume"
+                      style={{ color: '#52c41a', fontSize: 16 }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        timer.resumeTimer();
+                        notificationService.success('Timer resumed');
+                      }}
+                    />
+                  </Tooltip>
+                ) : (
+                  <Tooltip title="Take a break (pause timer)">
+                    <PauseOutlined
+                      key="pause"
+                      style={{ color: '#faad14', fontSize: 16 }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        timer.pauseTimer();
+                        notificationService.info('Timer paused - on break');
+                      }}
+                    />
+                  </Tooltip>
+                )}
+                <StopOutlined
+                  key="stop"
+                  style={{ color: '#ff4d4f', fontSize: 16 }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleStopTimer();
+                  }}
+                  title="Stop timer"
+                />
+              </>
             ) : (
               <PlayCircleOutlined
                 key="play"
@@ -184,15 +211,36 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete, projectId, 
           <div style={{ fontSize: 11, color: '#595959' }}>
             {new Date(task.createdAt).toLocaleDateString()}
           </div>
-          <div style={{
-            fontSize: 12,
-            color: task.timerActive ? '#1890ff' : '#8c8c8c',
-            fontWeight: task.timerActive ? 600 : 400,
-          }}>
+          <div>
             {task.timerActive ? (
-              <>{timer.formatTime(timer.totalMs)}</>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+                <div style={{
+                  fontSize: 12,
+                  color: '#1890ff',
+                  fontWeight: 600,
+                }}>
+                  Active: {timer.formatTime(timer.activeWorkMs)}
+                </div>
+                <div style={{
+                  fontSize: 11,
+                  color: '#8c8c8c',
+                }}>
+                  Total: {timer.formatTime(timer.totalElapsedMs)}
+                </div>
+                {timer.isPaused && (
+                  <div style={{
+                    fontSize: 10,
+                    color: '#faad14',
+                    fontWeight: 600,
+                  }}>
+                    ⏸ On Break
+                  </div>
+                )}
+              </div>
             ) : task.timeSpentMs ? (
-              <>Total: {formatTotalTime(task.timeSpentMs)}</>
+              <div style={{ fontSize: 12, color: '#8c8c8c' }}>
+                Total: {formatTotalTime(task.timeSpentMs)}
+              </div>
             ) : null}
           </div>
         </div>

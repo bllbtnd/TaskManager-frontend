@@ -54,8 +54,11 @@ export const taskService = {
     return response.data;
   },
 
-  stopTimer: async (projectId: string, taskId: string): Promise<Task> => {
-    const response = await api.post(`/projects/${projectId}/tasks/${taskId}/timer/stop`);
+  stopTimer: async (projectId: string, taskId: string, activeWorkMs: number, totalElapsedMs: number): Promise<Task> => {
+    const response = await api.post(`/projects/${projectId}/tasks/${taskId}/timer/stop`, {
+      activeWorkMs,
+      totalElapsedMs,
+    });
     return response.data;
   },
 
