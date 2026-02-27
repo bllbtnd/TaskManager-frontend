@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Button, Modal, Form, Input, Select, Spin, Space, DatePicker } from 'antd';
-import { PlusOutlined, UserAddOutlined } from '@ant-design/icons';
+import { PlusOutlined, ArrowLeftOutlined, SettingOutlined } from '@ant-design/icons';
 import { notificationService } from '../services/notificationService';
 import {
   DndContext,
@@ -26,6 +26,7 @@ const { TextArea } = Input;
 
 const TaskBoard: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
+  const navigate = useNavigate();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [project, setProject] = useState<Project | null>(null);
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
@@ -33,8 +34,6 @@ const TaskBoard: React.FC = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
-  const [inviteEmail, setInviteEmail] = useState('');
-  const [inviteLoading, setInviteLoading] = useState(false);
   const [memberEmails, setMemberEmails] = useState<string[]>([]);
   const [form] = Form.useForm();
 
@@ -70,24 +69,6 @@ const TaskBoard: React.FC = () => {
       notificationService.error('Failed to fetch data');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleInviteUser = async () => {
-    if (!projectId || !inviteEmail.trim()) {
-      notificationService.error('Please enter an email');
-      return;
-    }
-
-    setInviteLoading(true);
-    try {
-      await projectService.inviteUser(projectId, { email: inviteEmail.trim() });
-      notificationService.success('User invited successfully');
-      setInviteEmail('');
-    } catch (error) {
-      notificationService.error('Failed to invite user');
-    } finally {
-      setInviteLoading(false);
     }
   };
 
@@ -247,30 +228,30 @@ const TaskBoard: React.FC = () => {
     <div style={{ padding: 24 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, gap: 16 }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <h1 style={{ color: '#fff', margin: 0 }}>{project?.name || 'Project'}</h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <Button
+              icon={<ArrowLeftOutlined />}
+              onClick={() => navigate('/projects')}
+            >
+              Back to Projects
+            </Button>
+            <h1 style={{ color: '#fff', margin: 0 }}>{project?.name || 'Project'}</h1>
+          </div>
           <p style={{ color: '#8c8c8c', margin: 0 }}>{project?.description}</p>
-          {isOwner && (
-            <Space.Compact>
-              <Input
-                placeholder="Invite user by email"
-                value={inviteEmail}
-                onChange={(e) => setInviteEmail(e.target.value)}
-                style={{ width: 260 }}
-              />
-              <Button
-                type="primary"
-                icon={<UserAddOutlined />}
-                loading={inviteLoading}
-                onClick={handleInviteUser}
-              >
-                Add User
-              </Button>
-            </Space.Compact>
-          )}
         </div>
-        <Button type="primary" icon={<PlusOutlined />} onClick={openCreateModal} size="large">
-          Add Task
-        </Button>
+        <Space>
+          {isOwner && (
+            <Button
+              icon={<SettingOutlined />}
+              onClick={() => navigate(`/projects/${projectId}/settings`)}
+            >
+              Project Settings
+            </Button>
+          )}
+          <Button type="primary" icon={<PlusOutlined />} onClick={openCreateModal} size="large">
+            Add Task
+          </Button>
+        </Space>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>

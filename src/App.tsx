@@ -6,6 +6,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Projects from './pages/Projects';
 import TaskBoard from './pages/TaskBoard';
+import ProjectSettings from './pages/ProjectSettings';
 import AdminDashboard from './pages/AdminDashboard';
 import Settings from './pages/Settings';
 import BugReport from './pages/BugReport';
@@ -42,6 +43,7 @@ const App: React.FC = () => {
             <Route index element={<Navigate to="/projects" replace />} />
             <Route path="projects" element={<Projects />} />
             <Route path="projects/:projectId" element={<TaskBoard />} />
+            <Route path="projects/:projectId/settings" element={<ProjectSettings />} />
               <Route path="time-tracker" element={<TimeTracker />} />
             <Route path="settings" element={<Settings />} />
             <Route path="bug-report" element={<BugReport />} />

@@ -61,4 +61,9 @@ export const projectService = {
     const response = await api.get(`/projects/${projectId}/members`);
     return response.data;
   },
+
+  removeUser: async (projectId: string, email: string): Promise<Project> => {
+    const response = await api.delete(`/projects/${projectId}/members/${email}`);
+    return response.data;
+  },
 };
