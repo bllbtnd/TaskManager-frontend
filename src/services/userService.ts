@@ -47,6 +47,16 @@ export interface ChangePasswordRequest {
   confirmPassword: string;
 }
 
+export interface UpdateProfileRequest {
+  firstName: string;
+  lastName: string;
+  email: string;
+}
+
+export interface DeleteAccountRequest {
+  password: string;
+}
+
 export const userService = {
   getPendingUsers: async (): Promise<User[]> => {
     const response = await api.get('/users/pending');
@@ -89,6 +99,16 @@ export const userService = {
 
   changePassword: async (data: ChangePasswordRequest): Promise<{ message: string }> => {
     const response = await api.post('/users/change-password', data);
+    return response.data;
+  },
+
+  updateProfile: async (data: UpdateProfileRequest): Promise<UserSettings> => {
+    const response = await api.put('/users/profile', data);
+    return response.data;
+  },
+
+  deleteAccount: async (data: DeleteAccountRequest): Promise<{ message: string }> => {
+    const response = await api.delete('/users/me', { data });
     return response.data;
   },
 };
