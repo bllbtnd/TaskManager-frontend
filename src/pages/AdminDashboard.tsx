@@ -187,6 +187,16 @@ const AdminDashboard: React.FC = () => {
 
   const bugReportColumns = [
     {
+      title: 'Type',
+      dataIndex: 'type',
+      key: 'type',
+      render: (type: string) => {
+        const color = type === 'FEATURE_REQUEST' ? 'purple' : 'red';
+        const label = type === 'FEATURE_REQUEST' ? 'Feature Request' : 'Bug Report';
+        return <Tag color={color}>{label}</Tag>;
+      },
+    },
+    {
       title: 'Title',
       dataIndex: 'title',
       key: 'title',
@@ -349,7 +359,7 @@ const AdminDashboard: React.FC = () => {
           },
           {
             key: 'bug-reports',
-            label: 'Bug Reports',
+            label: 'Reports',
             children: (
               <Card
                 style={{ background: '#1f1f1f', border: '1px solid #303030' }}

@@ -4,6 +4,7 @@ export interface BugReport {
   id: string;
   title: string;
   description: string;
+  type: 'BUG_REPORT' | 'FEATURE_REQUEST';
   status: string;
   createdById: string;
   createdByEmail: string;
@@ -13,6 +14,7 @@ export interface BugReport {
 export interface BugReportRequest {
   title: string;
   description: string;
+  type: 'BUG_REPORT' | 'FEATURE_REQUEST';
 }
 
 export const bugReportService = {

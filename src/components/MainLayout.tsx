@@ -40,7 +40,7 @@ const MainLayout: React.FC = () => {
     {
       key: '/bug-report',
       icon: <BugOutlined />,
-      label: 'Bug Report',
+      label: 'Feedback',
       onClick: () => navigate('/bug-report'),
     },
     ...(isAdmin
