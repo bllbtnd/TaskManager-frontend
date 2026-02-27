@@ -57,6 +57,25 @@ export interface DeleteAccountRequest {
   password: string;
 }
 
+export interface UserProjectDetail {
+  id: string;
+  name: string;
+  description: string;
+  ownerId: string;
+  memberIds: string[];
+  createdAt: string;
+  tasks: Array<{
+    id: string;
+    title: string;
+    description: string;
+    status: string;
+    assignedToEmails: string[];
+    deadline?: string;
+    createdAt: string;
+    completedAt?: string;
+  }>;
+}
+
 export const userService = {
   getPendingUsers: async (): Promise<User[]> => {
     const response = await api.get('/users/pending');
@@ -109,6 +128,11 @@ export const userService = {
 
   deleteAccount: async (data: DeleteAccountRequest): Promise<{ message: string }> => {
     const response = await api.delete('/users/me', { data });
+    return response.data;
+  },
+
+  getUserProjects: async (userId: string): Promise<UserProjectDetail[]> => {
+    const response = await api.get(`/admin/users/${userId}/projects`);
     return response.data;
   },
 };

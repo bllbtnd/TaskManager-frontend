@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Table, Button, Tag, Space, Statistic, Row, Col, Tabs, Modal } from 'antd';
-import { CheckOutlined, CloseOutlined, TeamOutlined, ClockCircleOutlined, DeleteOutlined, FolderOutlined, CheckSquareOutlined } from '@ant-design/icons';
+import { Card, Table, Button, Tag, Space, Statistic, Row, Col, Tabs, Modal, Drawer, Collapse, Empty, Spin, Descriptions } from 'antd';
+import { CheckOutlined, CloseOutlined, TeamOutlined, ClockCircleOutlined, DeleteOutlined, FolderOutlined, CheckSquareOutlined, EyeOutlined } from '@ant-design/icons';
 import { userService } from '../services/userService';
 import { bugReportService } from '../services/bugReportService';
 import { notificationService } from '../services/notificationService';
-import type { User, UserStats } from '../services/userService';
+import type { User, UserStats, UserProjectDetail } from '../services/userService';
 import type { BugReport } from '../services/bugReportService';
 
 interface AdminStats {
@@ -20,6 +20,10 @@ const AdminDashboard: React.FC = () => {
   const [adminStats, setAdminStats] = useState<AdminStats>({ users: 0, projects: 0, tasks: 0 });
   const [bugReports, setBugReports] = useState<BugReport[]>([]);
   const [loading, setLoading] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [userProjects, setUserProjects] = useState<UserProjectDetail[]>([]);
+  const [loadingProjects, setLoadingProjects] = useState(false);
+  const [drawerVisible, setDrawerVisible] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -54,6 +58,21 @@ const AdminDashboard: React.FC = () => {
       fetchData();
     } catch (error) {
       notificationService.error('Failed to update user status');
+    }
+  };
+
+  const handleViewUserDetails = async (user: User) => {
+    setSelectedUser(user);
+    setDrawerVisible(true);
+    setLoadingProjects(true);
+    try {
+      const projects = await userService.getUserProjects(user.id);
+      setUserProjects(projects);
+    } catch (error) {
+      notificationService.error('Failed to load user projects');
+      setUserProjects([]);
+    } finally {
+      setLoadingProjects(false);
     }
   };
 
@@ -173,14 +192,24 @@ const AdminDashboard: React.FC = () => {
       title: 'Actions',
       key: 'actions',
       render: (_: any, record: User) => (
-        <Button
-          danger
-          icon={<DeleteOutlined />}
-          onClick={() => handleDeleteUser(record.id, `${record.firstName} ${record.lastName}`)}
-          size="small"
-        >
-          Delete
-        </Button>
+        <Space>
+          <Button
+            type="primary"
+            icon={<EyeOutlined />}
+            onClick={() => handleViewUserDetails(record)}
+            size="small"
+          >
+            View Details
+          </Button>
+          <Button
+            danger
+            icon={<DeleteOutlined />}
+            onClick={() => handleDeleteUser(record.id, `${record.firstName} ${record.lastName}`)}
+            size="small"
+          >
+            Delete
+          </Button>
+        </Space>
       ),
     },
   ];
@@ -376,6 +405,98 @@ const AdminDashboard: React.FC = () => {
           },
         ]}
       />
+
+      {/* User Details Drawer */}
+      <Drawer
+        title={selectedUser ? `${selectedUser.firstName} ${selectedUser.lastName} - Projects & Tasks` : 'User Details'}
+        placement="right"
+        onClose={() => setDrawerVisible(false)}
+        open={drawerVisible}
+        width={800}
+      >
+        {selectedUser && (
+          <div>
+            <Descriptions
+              column={1}
+              style={{ marginBottom: 24 }}
+              items={[
+                { label: 'Email', children: selectedUser.email },
+                { label: 'Role', children: <Tag color="blue">{selectedUser.role}</Tag> },
+                { label: 'Status', children: <Tag color={selectedUser.status === 'APPROVED' ? 'green' : 'orange'}>{selectedUser.status}</Tag> },
+                { label: 'Registered', children: new Date(selectedUser.createdAt).toLocaleDateString() },
+              ]}
+            />
+
+            {loadingProjects ? (
+              <Spin />
+            ) : userProjects.length === 0 ? (
+              <Empty description="No projects found" />
+            ) : (
+              <div>
+                <h3>Projects ({userProjects.length})</h3>
+                <Collapse
+                  items={userProjects.map((project) => ({
+                    key: project.id,
+                    label: (
+                      <Space>
+                        <FolderOutlined />
+                        <span>{project.name}</span>
+                        <Tag color="cyan">{project.tasks?.length || 0} tasks</Tag>
+                      </Space>
+                    ),
+                    children: (
+                      <div style={{ paddingLeft: 16 }}>
+                        <p><strong>Description:</strong> {project.description || 'N/A'}</p>
+                        <p><strong>Created:</strong> {project.createdAt}</p>
+                        <p><strong>Members:</strong> {project.memberIds?.length || 0}</p>
+
+                        {project.tasks && project.tasks.length > 0 ? (
+                          <div style={{ marginTop: 16 }}>
+                            <h4>Tasks</h4>
+                            <Collapse
+                              items={project.tasks.map((task) => ({
+                                key: task.id,
+                                label: (
+                                  <Space>
+                                    <CheckSquareOutlined />
+                                    <span>{task.title}</span>
+                                    <Tag color={task.status === 'DONE' ? 'green' : task.status === 'IN_PROGRESS' ? 'blue' : 'default'}>
+                                      {task.status?.replace(/_/g, ' ')}
+                                    </Tag>
+                                  </Space>
+                                ),
+                                children: (
+                                  <div style={{ paddingLeft: 16 }}>
+                                    <p><strong>Description:</strong> {task.description || 'N/A'}</p>
+                                    <p><strong>Status:</strong> {task.status?.replace(/_/g, ' ')}</p>
+                                    <p><strong>Created:</strong> {task.createdAt}</p>
+                                    {task.deadline && <p><strong>Deadline:</strong> {task.deadline}</p>}
+                                    {task.completedAt && <p><strong>Completed:</strong> {task.completedAt}</p>}
+                                    {task.assignedToEmails && task.assignedToEmails.length > 0 && (
+                                      <p>
+                                        <strong>Assigned To:</strong>{' '}
+                                        {task.assignedToEmails.map((email) => (
+                                          <Tag key={email} style={{ marginRight: 4 }}>{email}</Tag>
+                                        ))}
+                                      </p>
+                                    )}
+                                  </div>
+                                ),
+                              }))}
+                            />
+                          </div>
+                        ) : (
+                          <p style={{ marginTop: 16, color: '#999' }}>No tasks in this project</p>
+                        )}
+                      </div>
+                    ),
+                  }))}
+                />
+              </div>
+            )}
+          </div>
+        )}
+      </Drawer>
     </div>
   );
 };
