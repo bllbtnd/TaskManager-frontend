@@ -60,7 +60,6 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete, projectId, 
   const handleStopTimer = async () => {
     setIsToggling(true);
     try {
-      const activeWork = timer.stopTimer();
       const updatedTask = await taskService.stopTimer(projectId, task.id, timer.activeWorkMs, timer.totalElapsedMs);
       onTaskUpdate(updatedTask);
       notificationService.success('Timer stopped');
