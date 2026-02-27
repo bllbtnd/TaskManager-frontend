@@ -14,7 +14,10 @@ export interface Task {
   updatedAt: string;
   completedAt?: string;
   timeSpentMs?: number;
+  activeWorkMs?: number;
   timerStartedAt?: string;
+  pausedAt?: string;
+  sessionActiveWorkMs?: number;
   timerActive?: boolean;
 }
 
@@ -54,11 +57,18 @@ export const taskService = {
     return response.data;
   },
 
-  stopTimer: async (projectId: string, taskId: string, activeWorkMs: number, totalElapsedMs: number): Promise<Task> => {
-    const response = await api.post(`/projects/${projectId}/tasks/${taskId}/timer/stop`, {
-      activeWorkMs,
-      totalElapsedMs,
-    });
+  pauseTimer: async (projectId: string, taskId: string): Promise<Task> => {
+    const response = await api.post(`/projects/${projectId}/tasks/${taskId}/timer/pause`);
+    return response.data;
+  },
+
+  resumeTimer: async (projectId: string, taskId: string): Promise<Task> => {
+    const response = await api.post(`/projects/${projectId}/tasks/${taskId}/timer/resume`);
+    return response.data;
+  },
+
+  stopTimer: async (projectId: string, taskId: string): Promise<Task> => {
+    const response = await api.post(`/projects/${projectId}/tasks/${taskId}/timer/stop`);
     return response.data;
   },
 

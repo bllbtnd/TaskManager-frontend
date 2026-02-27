@@ -33,7 +33,14 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete, projectId, 
     disabled: task.timerActive,
   });
 
-  const timer = useTaskTimer(task.id, task.timeSpentMs || 0);
+  const timer = useTaskTimer(
+    task.timerActive || false,
+    task.timerStartedAt,
+    task.pausedAt,
+    task.sessionActiveWorkMs,
+    task.activeWorkMs || 0,
+    task.timeSpentMs || 0
+  );
 
   const [_isToggling, setIsToggling] = useState(false);
 
@@ -47,7 +54,6 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete, projectId, 
     setIsToggling(true);
     try {
       const updatedTask = await taskService.startTimer(projectId, task.id);
-      timer.startTimer();
       onTaskUpdate(updatedTask);
       notificationService.success('Timer started');
     } catch (error) {
@@ -57,10 +63,36 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete, projectId, 
     }
   };
 
+  const handlePauseTimer = async () => {
+    setIsToggling(true);
+    try {
+      const updatedTask = await taskService.pauseTimer(projectId, task.id);
+      onTaskUpdate(updatedTask);
+      notificationService.info('Timer paused - on break');
+    } catch (error) {
+      notificationService.error('Failed to pause timer');
+    } finally {
+      setIsToggling(false);
+    }
+  };
+
+  const handleResumeTimer = async () => {
+    setIsToggling(true);
+    try {
+      const updatedTask = await taskService.resumeTimer(projectId, task.id);
+      onTaskUpdate(updatedTask);
+      notificationService.success('Timer resumed');
+    } catch (error) {
+      notificationService.error('Failed to resume timer');
+    } finally {
+      setIsToggling(false);
+    }
+  };
+
   const handleStopTimer = async () => {
     setIsToggling(true);
     try {
-      const updatedTask = await taskService.stopTimer(projectId, task.id, timer.activeWorkMs, timer.totalElapsedMs);
+      const updatedTask = await taskService.stopTimer(projectId, task.id);
       onTaskUpdate(updatedTask);
       notificationService.success('Timer stopped');
     } catch (error) {
@@ -115,8 +147,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete, projectId, 
                       style={{ color: '#52c41a', fontSize: 16 }}
                       onClick={(e) => {
                         e.stopPropagation();
-                        timer.resumeTimer();
-                        notificationService.success('Timer resumed');
+                        handleResumeTimer();
                       }}
                     />
                   </Tooltip>
@@ -127,8 +158,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete, projectId, 
                       style={{ color: '#faad14', fontSize: 16 }}
                       onClick={(e) => {
                         e.stopPropagation();
-                        timer.pauseTimer();
-                        notificationService.info('Timer paused - on break');
+                        handlePauseTimer();
                       }}
                     />
                   </Tooltip>
@@ -213,18 +243,13 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete, projectId, 
           <div>
             {task.timerActive ? (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
-                <div style={{
-                  fontSize: 12,
-                  color: '#1890ff',
-                  fontWeight: 600,
-                }}>
-                  Active: {timer.formatTime(timer.activeWorkMs)}
-                </div>
-                <div style={{
-                  fontSize: 11,
-                  color: '#8c8c8c',
-                }}>
-                  Total: {timer.formatTime(timer.totalElapsedMs)}
+                <div style={{ display: 'flex', gap: 8, fontSize: 11 }}>
+                  <span style={{ color: '#52c41a', fontWeight: 600 }}>
+                    ✓ {timer.formatTime(timer.activeWorkMs)}
+                  </span>
+                  <span style={{ color: '#ff4d4f', fontWeight: 600 }}>
+                    ⏸ {timer.formatTime(timer.totalElapsedMs - timer.activeWorkMs)}
+                  </span>
                 </div>
                 {timer.isPaused && (
                   <div style={{
@@ -232,13 +257,18 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete, projectId, 
                     color: '#faad14',
                     fontWeight: 600,
                   }}>
-                    ⏸ On Break
+                    On Break
                   </div>
                 )}
               </div>
-            ) : task.timeSpentMs ? (
-              <div style={{ fontSize: 12, color: '#8c8c8c' }}>
-                Total: {formatTotalTime(task.timeSpentMs)}
+            ) : (task.timeSpentMs || task.activeWorkMs) ? (
+              <div style={{ display: 'flex', gap: 8, fontSize: 11 }}>
+                <span style={{ color: '#52c41a' }}>
+                  ✓ {formatTotalTime(task.activeWorkMs || 0)}
+                </span>
+                <span style={{ color: '#ff4d4f' }}>
+                  ⏸ {formatTotalTime((task.timeSpentMs || 0) - (task.activeWorkMs || 0))}
+                </span>
               </div>
             ) : null}
           </div>

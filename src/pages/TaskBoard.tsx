@@ -173,6 +173,8 @@ const TaskBoard: React.FC = () => {
   const activeTask = tasks.find((task) => task.id === activeId);
 
   const totalTimeSpent = tasks.reduce((sum, task) => sum + (task.timeSpentMs || 0), 0);
+  const totalActiveWork = tasks.reduce((sum, task) => sum + (task.activeWorkMs || 0), 0);
+  const totalIdleTime = totalTimeSpent - totalActiveWork;
 
   const formatTotalTime = (ms: number) => {
     if (!ms) return '0s';
@@ -254,11 +256,12 @@ const TaskBoard: React.FC = () => {
         </Space>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
-        <StatCard label="Total Time Spent" value={formatTotalTime(totalTimeSpent)} color="#1890ff" />
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 16, marginBottom: 24 }}>
+        <StatCard label="✓ Active Work" value={formatTotalTime(totalActiveWork)} color="#52c41a" />
+        <StatCard label="⏸ Idle Time" value={formatTotalTime(totalIdleTime)} color="#ff4d4f" />
         <StatCard label="Total Tasks" value={totalTasks} color="#fff" />
         <StatCard label="Avg Time per Task" value={formatTotalTime(avgTimePerTask)} color="#faad14" />
-        <StatCard label="Completion Rate" value={`${completionRate}%`} color="#52c41a" />
+        <StatCard label="Completion Rate" value={`${completionRate}%`} color="#1890ff" />
       </div>
 
       <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
