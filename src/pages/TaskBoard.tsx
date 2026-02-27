@@ -257,8 +257,8 @@ const TaskBoard: React.FC = () => {
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 16, marginBottom: 24 }}>
-        <StatCard label="✓ Active Work" value={formatTotalTime(totalActiveWork)} color="#52c41a" />
-        <StatCard label="⏸ Idle Time" value={formatTotalTime(totalIdleTime)} color="#ff4d4f" />
+        <StatCard label="Active Work" value={formatTotalTime(totalActiveWork)} color="#52c41a" />
+        <StatCard label="Idle Time" value={formatTotalTime(totalIdleTime)} color="#ff4d4f" />
         <StatCard label="Total Tasks" value={totalTasks} color="#fff" />
         <StatCard label="Avg Time per Task" value={formatTotalTime(avgTimePerTask)} color="#faad14" />
         <StatCard label="Completion Rate" value={`${completionRate}%`} color="#1890ff" />

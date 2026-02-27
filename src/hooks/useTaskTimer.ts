@@ -42,13 +42,14 @@ export const useTaskTimer = (
     if (pausedAt) {
       // Paused: show accumulated active work, total from start to pause
       const pauseTime = new Date(pausedAt).getTime();
+      const sessionTotal = pauseTime - startTime;
       return {
         activeWorkMs: baseActiveWorkMs + accumulated,
-        totalElapsedMs: baseTotalMs + (pauseTime - startTime),
+        totalElapsedMs: baseTotalMs + sessionTotal,
         isPaused: true,
       };
     } else {
-      // Running: calculate from start to now
+      // Running: calculate only the current session time
       const elapsedSinceStart = currentTime - startTime;
       return {
         activeWorkMs: baseActiveWorkMs + accumulated + elapsedSinceStart,

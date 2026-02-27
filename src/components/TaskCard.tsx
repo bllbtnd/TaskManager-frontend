@@ -245,10 +245,10 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete, projectId, 
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
                 <div style={{ display: 'flex', gap: 8, fontSize: 11 }}>
                   <span style={{ color: '#52c41a', fontWeight: 600 }}>
-                    ✓ {timer.formatTime(timer.activeWorkMs)}
+                    {timer.formatTime(timer.activeWorkMs)}
                   </span>
                   <span style={{ color: '#ff4d4f', fontWeight: 600 }}>
-                    ⏸ {timer.formatTime(timer.totalElapsedMs - timer.activeWorkMs)}
+                    {timer.formatTime(Math.max(0, timer.totalElapsedMs - timer.activeWorkMs))}
                   </span>
                 </div>
                 {timer.isPaused && (
@@ -264,10 +264,10 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete, projectId, 
             ) : (task.timeSpentMs || task.activeWorkMs) ? (
               <div style={{ display: 'flex', gap: 8, fontSize: 11 }}>
                 <span style={{ color: '#52c41a' }}>
-                  ✓ {formatTotalTime(task.activeWorkMs || 0)}
+                  {formatTotalTime(task.activeWorkMs || 0)}
                 </span>
                 <span style={{ color: '#ff4d4f' }}>
-                  ⏸ {formatTotalTime((task.timeSpentMs || 0) - (task.activeWorkMs || 0))}
+                  {formatTotalTime(Math.max(0, (task.timeSpentMs || 0) - (task.activeWorkMs || 0)))}
                 </span>
               </div>
             ) : null}
