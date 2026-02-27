@@ -9,6 +9,7 @@ import TaskBoard from './pages/TaskBoard';
 import AdminDashboard from './pages/AdminDashboard';
 import Settings from './pages/Settings';
 import BugReport from './pages/BugReport';
+import TimeTracker from './pages/TimeTracker';
 import MainLayout from './components/MainLayout';
 import ProtectedRoute from './components/ProtectedRoute';
 
@@ -41,6 +42,7 @@ const App: React.FC = () => {
             <Route index element={<Navigate to="/projects" replace />} />
             <Route path="projects" element={<Projects />} />
             <Route path="projects/:projectId" element={<TaskBoard />} />
+              <Route path="time-tracker" element={<TimeTracker />} />
             <Route path="settings" element={<Settings />} />
             <Route path="bug-report" element={<BugReport />} />
             <Route

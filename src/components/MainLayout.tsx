@@ -7,6 +7,7 @@ import {
   DashboardOutlined,
   SettingOutlined,
   BugOutlined,
+  ClockCircleOutlined,
 } from '@ant-design/icons';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { authService } from '../services/authService';
@@ -31,6 +32,12 @@ const MainLayout: React.FC = () => {
       label: 'Projects',
       onClick: () => navigate('/projects'),
     },
+      {
+        key: '/time-tracker',
+        icon: <ClockCircleOutlined />,
+        label: 'Time Tracker',
+        onClick: () => navigate('/time-tracker'),
+      },
     {
       key: '/settings',
       icon: <SettingOutlined />,
