@@ -56,4 +56,9 @@ export const projectService = {
     const response = await api.post(`/projects/${projectId}/leave`);
     return response.data;
   },
+
+  getProjectMembers: async (projectId: string): Promise<string[]> => {
+    const response = await api.get(`/projects/${projectId}/members`);
+    return response.data;
+  },
 };

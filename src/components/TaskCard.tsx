@@ -7,6 +7,8 @@ import type { Task } from '../services/taskService';
 import { taskService } from '../services/taskService';
 import { notificationService } from '../services/notificationService';
 import { useTaskTimer } from '../hooks/useTaskTimer';
+import type { UserProfile } from '../services/userService';
+import type { Project } from '../services/projectService';
 
 interface TaskCardProps {
   task: Task;
@@ -14,9 +16,11 @@ interface TaskCardProps {
   onDelete: (taskId: string) => void;
   projectId: string;
   onTaskUpdate: (updatedTask: Task) => void;
+  currentUser: UserProfile | null;
+  project: Project | null;
 }
 
-const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete, projectId, onTaskUpdate }) => {
+const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete, projectId, onTaskUpdate, currentUser, project }) => {
   const {
     attributes,
     listeners,
@@ -32,6 +36,12 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete, projectId, 
   const timer = useTaskTimer(task.id, task.timeSpentMs || 0);
 
   const [_isToggling, setIsToggling] = useState(false);
+
+  // Check if current user can control the timer (owner or assigned)
+  const canControlTimer = currentUser && project && (
+    project.ownerId === currentUser.id ||
+    (task.assignedToEmails && task.assignedToEmails.includes(currentUser.email))
+  );
 
   const handleStartTimer = async () => {
     setIsToggling(true);
@@ -96,26 +106,35 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete, projectId, 
         }}
         hoverable={!task.timerActive}
         actions={[
-          task.timerActive ? (
-            <StopOutlined
-              key="stop"
-              style={{ color: '#ff4d4f', fontSize: 16 }}
-              onClick={(e) => {
-                e.stopPropagation();
-                handleStopTimer();
-              }}
-              title="Stop timer"
-            />
+          canControlTimer ? (
+            task.timerActive ? (
+              <StopOutlined
+                key="stop"
+                style={{ color: '#ff4d4f', fontSize: 16 }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleStopTimer();
+                }}
+                title="Stop timer"
+              />
+            ) : (
+              <PlayCircleOutlined
+                key="play"
+                style={{ color: '#52c41a', fontSize: 16 }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleStartTimer();
+                }}
+                title="Start timer"
+              />
+            )
           ) : (
-            <PlayCircleOutlined
-              key="play"
-              style={{ color: '#52c41a', fontSize: 16 }}
-              onClick={(e) => {
-                e.stopPropagation();
-                handleStartTimer();
-              }}
-              title="Start timer"
-            />
+            <Tooltip title="Only assigned users or project owner can control timer">
+              <PlayCircleOutlined
+                key="play-disabled"
+                style={{ color: '#8c8c8c', fontSize: 16, cursor: 'not-allowed' }}
+              />
+            </Tooltip>
           ),
           <EditOutlined
             key="edit"

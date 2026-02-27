@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { Button, Modal, Form, Input, Select, Spin, Space, DatePicker, Tag } from 'antd';
+import { Button, Modal, Form, Input, Select, Spin, Space, DatePicker } from 'antd';
 import { PlusOutlined, UserAddOutlined } from '@ant-design/icons';
 import { notificationService } from '../services/notificationService';
 import {
@@ -35,6 +35,7 @@ const TaskBoard: React.FC = () => {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteLoading, setInviteLoading] = useState(false);
+  const [memberEmails, setMemberEmails] = useState<string[]>([]);
   const [form] = Form.useForm();
 
   const sensors = useSensors(
@@ -55,14 +56,16 @@ const TaskBoard: React.FC = () => {
     if (!projectId) return;
     setLoading(true);
     try {
-      const [projectData, tasksData, profile] = await Promise.all([
+      const [projectData, tasksData, profile, members] = await Promise.all([
         projectService.getProject(projectId),
         taskService.getProjectTasks(projectId),
         userService.getCurrentUserProfile(),
+        projectService.getProjectMembers(projectId),
       ]);
       setProject(projectData);
       setTasks(tasksData);
       setCurrentUser(profile);
+      setMemberEmails(members);
     } catch (error) {
       notificationService.error('Failed to fetch data');
     } finally {
@@ -307,6 +310,8 @@ const TaskBoard: React.FC = () => {
                           onEdit={handleEdit}
                           onDelete={handleDelete}
                           projectId={projectId!}
+                          currentUser={currentUser}
+                          project={project}
                           onTaskUpdate={(updatedTask) => {
                             setTasks((prev) =>
                               prev.map((t) => (t.id === updatedTask.id ? updatedTask : t))
@@ -383,19 +388,12 @@ const TaskBoard: React.FC = () => {
             </Select>
           </Form.Item>
 
-          <Form.Item name="assignedToEmails" label="Assign Users (by email)">
+          <Form.Item name="assignedToEmails" label="Assign Users">
             <Select
-              mode="tags"
-              placeholder="Type email addresses and press Enter"
-              tokenSeparators={[',', ' ']}
-              tagRender={(props) => {
-                const { label, closable, onClose } = props;
-                return (
-                  <Tag closable={closable} onClose={onClose} style={{ marginRight: 3 }}>
-                    {label}
-                  </Tag>
-                );
-              }}
+              mode="multiple"
+              placeholder="Select project members to assign"
+              optionFilterProp="label"
+              options={memberEmails.map((email) => ({ label: email, value: email }))}
             />
           </Form.Item>
 
