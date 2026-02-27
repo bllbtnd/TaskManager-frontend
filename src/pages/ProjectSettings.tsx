@@ -151,8 +151,6 @@ const ProjectSettings: React.FC = () => {
     return null;
   }
 
-  const ownerEmail = memberEmails[0]; // Owner is always first in the list
-  const teamMembers = memberEmails.slice(1); // Rest are team members
 
   return (
     <div style={{ padding: 24, maxWidth: 1200, margin: '0 auto' }}>
