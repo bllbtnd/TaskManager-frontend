@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Card } from 'antd';
-import { EditOutlined, DeleteOutlined, PlayCircleOutlined, StopOutlined } from '@ant-design/icons';
+import { Card, Tag, Tooltip } from 'antd';
+import { EditOutlined, DeleteOutlined, PlayCircleOutlined, StopOutlined, CalendarOutlined, UserOutlined } from '@ant-design/icons';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { Task } from '../services/taskService';
@@ -138,6 +138,28 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete, projectId, 
           <p style={{ color: '#8c8c8c', fontSize: 12, marginBottom: 8 }}>
             {task.description}
           </p>
+        )}
+        {task.assignedToEmails && task.assignedToEmails.length > 0 && (
+          <div style={{ marginBottom: 8, display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+            {task.assignedToEmails.map((email) => (
+              <Tooltip key={email} title={email}>
+                <Tag icon={<UserOutlined />} style={{ fontSize: 11 }}>
+                  {email.split('@')[0]}
+                </Tag>
+              </Tooltip>
+            ))}
+          </div>
+        )}
+        {task.deadline && (
+          <div style={{ marginBottom: 8 }}>
+            <Tag
+              icon={<CalendarOutlined />}
+              color={new Date(task.deadline) < new Date() && task.status !== 'DONE' ? 'red' : 'blue'}
+              style={{ fontSize: 11 }}
+            >
+              {new Date(task.deadline).toLocaleDateString()}
+            </Tag>
+          </div>
         )}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ fontSize: 11, color: '#595959' }}>

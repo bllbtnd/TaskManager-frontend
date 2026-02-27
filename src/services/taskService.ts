@@ -8,7 +8,8 @@ export interface Task {
   title: string;
   description: string;
   status: TaskStatus;
-  assignedToId?: string;
+  assignedToEmails?: string[];
+  deadline?: string;
   createdAt: string;
   updatedAt: string;
   completedAt?: string;
@@ -21,7 +22,8 @@ export interface TaskRequest {
   title: string;
   description: string;
   status?: TaskStatus;
-  assignedToId?: string;
+  assignedToEmails?: string[];
+  deadline?: string;
 }
 
 export const taskService = {

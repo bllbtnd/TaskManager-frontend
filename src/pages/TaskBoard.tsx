@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { Button, Modal, Form, Input, Select, Spin, Space } from 'antd';
+import { Button, Modal, Form, Input, Select, Spin, Space, DatePicker, Tag } from 'antd';
 import { PlusOutlined, UserAddOutlined } from '@ant-design/icons';
 import { notificationService } from '../services/notificationService';
 import {
@@ -20,6 +20,7 @@ import { userService } from '../services/userService';
 import type { UserProfile } from '../services/userService';
 import TaskCard from '../components/TaskCard';
 import DropZone from '../components/DropZone.tsx';
+import dayjs from 'dayjs';
 
 const { TextArea } = Input;
 
@@ -112,6 +113,8 @@ const TaskBoard: React.FC = () => {
       title: task.title,
       description: task.description,
       status: task.status,
+      assignedToEmails: task.assignedToEmails || [],
+      deadline: task.deadline ? dayjs(task.deadline) : undefined,
     });
     setModalVisible(true);
   };
@@ -149,6 +152,14 @@ const TaskBoard: React.FC = () => {
     const task = tasks.find((t) => t.id === taskId);
     
     if (!task) return;
+
+    // Only assigned users or project owner can move tasks
+    const canMove = isOwner ||
+      (task.assignedToEmails && currentUser && task.assignedToEmails.includes(currentUser.email));
+    if (!canMove) {
+      notificationService.error('Only assigned users or the project owner can move tasks');
+      return;
+    }
 
     // The over.id should be the column status
     const newStatus = over.id as TaskStatus;
@@ -342,7 +353,16 @@ const TaskBoard: React.FC = () => {
         }}
         footer={null}
       >
-        <Form form={form} onFinish={handleCreateOrUpdate} layout="vertical">
+        <Form form={form} onFinish={(values: any) => {
+          const request: TaskRequest = {
+            title: values.title,
+            description: values.description,
+            status: values.status,
+            assignedToEmails: values.assignedToEmails || [],
+            deadline: values.deadline ? values.deadline.toISOString() : undefined,
+          };
+          handleCreateOrUpdate(request);
+        }} layout="vertical">
           <Form.Item
             name="title"
             label="Task Title"
@@ -361,6 +381,31 @@ const TaskBoard: React.FC = () => {
               <Select.Option value="IN_PROGRESS">In Progress</Select.Option>
               <Select.Option value="DONE">Done</Select.Option>
             </Select>
+          </Form.Item>
+
+          <Form.Item name="assignedToEmails" label="Assign Users (by email)">
+            <Select
+              mode="tags"
+              placeholder="Type email addresses and press Enter"
+              tokenSeparators={[',', ' ']}
+              tagRender={(props) => {
+                const { label, closable, onClose } = props;
+                return (
+                  <Tag closable={closable} onClose={onClose} style={{ marginRight: 3 }}>
+                    {label}
+                  </Tag>
+                );
+              }}
+            />
+          </Form.Item>
+
+          <Form.Item name="deadline" label="Deadline">
+            <DatePicker
+              style={{ width: '100%' }}
+              showTime
+              format="YYYY-MM-DD HH:mm"
+              placeholder="Select deadline"
+            />
           </Form.Item>
 
           <Form.Item>
