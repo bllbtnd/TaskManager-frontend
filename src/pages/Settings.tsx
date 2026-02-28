@@ -25,10 +25,14 @@ import {
   SaveOutlined,
   CloseOutlined,
   DeleteOutlined,
+  GithubOutlined,
+  LinkOutlined,
 } from '@ant-design/icons';
 import { userService } from '../services/userService';
 import type { UserSettings, UpdateProfileRequest } from '../services/userService';
+import { gitHubService } from '../services/gitHubService';
 import { useNavigate } from 'react-router-dom';
+import { notificationService } from '../services/notificationService';
 
 const { Text } = Typography;
 
@@ -44,6 +48,8 @@ const Settings: React.FC = () => {
   const [profileLoading, setProfileLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [githubUsername, setGithubUsername] = useState<string | null>(null);
+  const [githubConnecting, setGithubConnecting] = useState(false);
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -54,6 +60,9 @@ const Settings: React.FC = () => {
         const data = await userService.getUserSettings();
         console.log('Settings loaded successfully:', data);
         setSettings(data);
+        if (data.githubUsername) {
+          setGithubUsername(data.githubUsername);
+        }
         profileForm.setFieldsValue({
           firstName: data.firstName,
           lastName: data.lastName,
@@ -156,6 +165,37 @@ const Settings: React.FC = () => {
       cancelText: 'Cancel',
       onOk: () => {
         deleteForm.submit();
+      },
+    });
+  };
+
+  const handleConnectGitHub = async () => {
+    setGithubConnecting(true);
+    try {
+      const { authUrl } = await gitHubService.getOAuthUrl();
+      // Store the current URL to return to after OAuth
+      sessionStorage.setItem('redirectAfterOAuth', window.location.href);
+      window.location.href = authUrl;
+    } catch (error) {
+      notificationService.error('Failed to initiate GitHub connection');
+      setGithubConnecting(false);
+    }
+  };
+
+  const handleDisconnectGitHub = async () => {
+    Modal.confirm({
+      title: 'Disconnect GitHub',
+      content: 'Are you sure you want to disconnect your GitHub account? Your existing task-to-issue links will be preserved.',
+      okText: 'Disconnect',
+      cancelText: 'Cancel',
+      onOk: async () => {
+        try {
+          await gitHubService.disconnectGitHub();
+          setGithubUsername(null);
+          notificationService.success('GitHub account disconnected');
+        } catch (error) {
+          notificationService.error('Failed to disconnect GitHub');
+        }
       },
     });
   };
@@ -510,6 +550,79 @@ const Settings: React.FC = () => {
                           </Button>
                         </Form.Item>
                       </Form>
+                    </div>
+                  </Card>
+                </Col>
+              </Row>
+            ),
+          },
+          {
+            key: 'integrations',
+            label: <Space><GithubOutlined />Integrations</Space>,
+            children: (
+              <Row gutter={[24, 24]}>
+                {/* GitHub Integration Card */}
+                <Col xs={24} lg={12}>
+                  <Card
+                    title={<Space><GithubOutlined />GitHub Integration</Space>}
+                    bordered={false}
+                    className="settings-card"
+                  >
+                    <div>
+                      {githubUsername ? (
+                        <>
+                          <div style={{ marginBottom: 16 }}>
+                            <Text strong>Connected as:</Text>
+                            <Text style={{ display: 'block', marginTop: 8, color: '#1890ff' }}>
+                              {githubUsername}
+                            </Text>
+                          </div>
+                          <Text type="secondary" style={{ display: 'block', marginBottom: 16 }}>
+                            You can now create tasks that sync to GitHub issues and close them when tasks are marked as done.
+                          </Text>
+                          <Button
+                            danger
+                            onClick={handleDisconnectGitHub}
+                            style={{ width: '100%' }}
+                          >
+                            Disconnect GitHub
+                          </Button>
+                        </>
+                      ) : (
+                        <>
+                          <Text type="secondary" style={{ display: 'block', marginBottom: 16 }}>
+                            Connect your GitHub account to automatically create and manage issues from tasks.
+                          </Text>
+                          <Button
+                            type="primary"
+                            icon={<GithubOutlined />}
+                            loading={githubConnecting}
+                            onClick={handleConnectGitHub}
+                            style={{ width: '100%' }}
+                          >
+                            Connect GitHub
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </Card>
+                </Col>
+
+                {/* Integration Info Card */}
+                <Col xs={24} lg={12}>
+                  <Card
+                    title="How It Works"
+                    bordered={false}
+                    className="settings-card"
+                  >
+                    <div style={{ color: '#8c8c8c' }}>
+                      <p><strong>Create Issues:</strong> When creating a task, you can optionally create a GitHub issue automatically.</p>
+                      <p><strong>Sync Status:</strong> Task status syncs to GitHub automatically:</p>
+                      <ul style={{ marginLeft: 16 }}>
+                        <li>Moving a task to "Done" closes the GitHub issue</li>
+                        <li>GitHub issue state changes are reflected in your tasks</li>
+                      </ul>
+                      <p><strong>Permissions:</strong> Ensure your GitHub account has write access to the repository.</p>
                     </div>
                   </Card>
                 </Col>

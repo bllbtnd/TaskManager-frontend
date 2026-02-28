@@ -39,6 +39,7 @@ export interface UserSettings {
   totalProjects: number;
   totalTasks: number;
   totalTimeSpentMs: number;
+  githubUsername?: string;
 }
 
 export interface ChangePasswordRequest {

@@ -8,6 +8,7 @@ import Projects from './pages/Projects';
 import TaskBoard from './pages/TaskBoard';
 import ProjectSettings from './pages/ProjectSettings';
 import GitHubIssuesViewer from './pages/GitHubIssuesViewer';
+import GitHubOAuthCallback from './pages/GitHubOAuthCallback';
 import AdminDashboard from './pages/AdminDashboard';
 import Settings from './pages/Settings';
 import BugReport from './pages/BugReport';
@@ -42,6 +43,7 @@ const App: React.FC = () => {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/auth/github/callback" element={<GitHubOAuthCallback />} />
           <Route
             path="/mobile-summary"
             element={
