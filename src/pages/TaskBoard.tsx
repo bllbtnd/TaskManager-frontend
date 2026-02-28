@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button, Modal, Form, Input, Select, Spin, Space, DatePicker } from 'antd';
-import { PlusOutlined, ArrowLeftOutlined, SettingOutlined, GithubOutlined } from '@ant-design/icons';
+import { PlusOutlined, ArrowLeftOutlined, SettingOutlined, GithubOutlined, SyncOutlined } from '@ant-design/icons';
 import { notificationService } from '../services/notificationService';
 import {
   DndContext,
@@ -16,10 +16,12 @@ import { taskService } from '../services/taskService';
 import type { Task, TaskRequest, TaskStatus } from '../services/taskService';
 import { projectService } from '../services/projectService';
 import type { Project } from '../services/projectService';
+import { gitHubService } from '../services/gitHubService';
+import type { GitHubIssue } from '../services/gitHubService';
 import { userService } from '../services/userService';
 import type { UserProfile } from '../services/userService';
 import TaskCard from '../components/TaskCard';
-import GitHubIssuesList from '../components/GitHubIssuesList';
+import GitHubIssueCard from '../components/GitHubIssueCard';
 import DropZone from '../components/DropZone.tsx';
 import dayjs from 'dayjs';
 
@@ -36,6 +38,8 @@ const TaskBoard: React.FC = () => {
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [memberEmails, setMemberEmails] = useState<string[]>([]);
+  const [githubIssues, setGithubIssues] = useState<GitHubIssue[]>([]);
+  const [syncing, setSyncing] = useState(false);
   const [form] = Form.useForm();
 
   const sensors = useSensors(
@@ -66,6 +70,12 @@ const TaskBoard: React.FC = () => {
       setTasks(tasksData);
       setCurrentUser(profile);
       setMemberEmails(members);
+      if (projectData.githubUrl) {
+        const issues = await gitHubService.getGitHubIssues(projectId);
+        setGithubIssues(issues);
+      } else {
+        setGithubIssues([]);
+      }
     } catch (error) {
       notificationService.error('Failed to fetch data');
     } finally {
@@ -164,6 +174,26 @@ const TaskBoard: React.FC = () => {
     return tasks.filter((task) => task.status === status);
   };
 
+  const getGitHubIssuesByStatus = (status: TaskStatus) => {
+    const targetState = status === 'DONE' ? 'closed' : 'open';
+    return githubIssues.filter((issue) => issue.gitHubState === targetState);
+  };
+
+  const handleSyncGitHub = async () => {
+    if (!projectId) return;
+    setSyncing(true);
+    try {
+      const result = await gitHubService.syncGitHubIssues(projectId);
+      notificationService.success(result.message || 'GitHub issues synced successfully');
+      const updatedIssues = await gitHubService.getGitHubIssues(projectId);
+      setGithubIssues(updatedIssues);
+    } catch (error) {
+      notificationService.error('Failed to sync GitHub issues');
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   const openCreateModal = () => {
     setEditingTask(null);
     form.resetFields();
@@ -252,12 +282,21 @@ const TaskBoard: React.FC = () => {
             </Button>
           )}
           {project?.githubUrl && (
-            <Button
-              icon={<GithubOutlined />}
-              onClick={() => navigate(`/projects/${projectId}/github`)}
-            >
-              GitHub Issues
-            </Button>
+            <>
+              <Button
+                icon={<SyncOutlined spin={syncing} />}
+                loading={syncing}
+                onClick={handleSyncGitHub}
+              >
+                Sync GitHub
+              </Button>
+              <Button
+                icon={<GithubOutlined />}
+                onClick={() => navigate(`/projects/${projectId}/github`)}
+              >
+                View All Issues
+              </Button>
+            </>
           )}
           <Button type="primary" icon={<PlusOutlined />} onClick={openCreateModal} size="large">
             Add Task
@@ -273,22 +312,19 @@ const TaskBoard: React.FC = () => {
         <StatCard label="Completion Rate" value={`${completionRate}%`} color="#1890ff" />
       </div>
 
-      {project?.githubUrl && (
-        <GitHubIssuesList projectId={projectId!} compact={false} />
-      )}
-
       <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
           {statusColumns.map((column) => {
             const columnTasks = getTasksByStatus(column.status);
+            const columnIssues = getGitHubIssuesByStatus(column.status);
             return (
-              <DropZone key={column.status} status={column.status} title={column.title} color={column.color} count={columnTasks.length}>
+              <DropZone key={column.status} status={column.status} title={column.title} color={column.color} count={columnTasks.length + columnIssues.length}>
                 <SortableContext
                   items={columnTasks.map((t) => t.id)}
                   strategy={verticalListSortingStrategy}
                 >
                   <div style={{ minHeight: 400 }}>
-                    {columnTasks.length === 0 ? (
+                    {columnTasks.length === 0 && columnIssues.length === 0 ? (
                       <div
                         style={{
                           textAlign: 'center',
@@ -300,22 +336,27 @@ const TaskBoard: React.FC = () => {
                         Drop tasks here
                       </div>
                     ) : (
-                      columnTasks.map((task) => (
-                        <TaskCard
-                          key={task.id}
-                          task={task}
-                          onEdit={handleEdit}
-                          onDelete={handleDelete}
-                          projectId={projectId!}
-                          currentUser={currentUser}
-                          project={project}
-                          onTaskUpdate={(updatedTask) => {
-                            setTasks((prev) =>
-                              prev.map((t) => (t.id === updatedTask.id ? updatedTask : t))
-                            );
-                          }}
-                        />
-                      ))
+                      <>
+                        {columnTasks.map((task) => (
+                          <TaskCard
+                            key={task.id}
+                            task={task}
+                            onEdit={handleEdit}
+                            onDelete={handleDelete}
+                            projectId={projectId!}
+                            currentUser={currentUser}
+                            project={project}
+                            onTaskUpdate={(updatedTask) => {
+                              setTasks((prev) =>
+                                prev.map((t) => (t.id === updatedTask.id ? updatedTask : t))
+                              );
+                            }}
+                          />
+                        ))}
+                        {columnIssues.map((issue) => (
+                          <GitHubIssueCard key={issue.id} issue={issue} />
+                        ))}
+                      </>
                     )}
                   </div>
                 </SortableContext>
