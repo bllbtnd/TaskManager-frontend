@@ -4,6 +4,7 @@ import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import { useNavigate, Link } from 'react-router-dom';
 import { authService } from '../services/authService';
 import { notificationService } from '../services/notificationService';
+import { isMobileDevice } from '../utils/device';
 
 const { Title, Text } = Typography;
 
@@ -16,7 +17,7 @@ const Login: React.FC = () => {
     try {
       await authService.login(values);
       notificationService.success('Login successful!');
-      navigate('/projects');
+      navigate(isMobileDevice() ? '/mobile-summary' : '/projects');
     } catch (error: any) {
       notificationService.error(error.response?.data || 'Login failed');
     } finally {

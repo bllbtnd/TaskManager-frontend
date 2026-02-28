@@ -11,8 +11,18 @@ import AdminDashboard from './pages/AdminDashboard';
 import Settings from './pages/Settings';
 import BugReport from './pages/BugReport';
 import TimeTracker from './pages/TimeTracker';
+import MobileSummary from './pages/MobileSummary';
 import MainLayout from './components/MainLayout';
 import ProtectedRoute from './components/ProtectedRoute';
+import { isMobileDevice } from './utils/device';
+
+const DesktopOnlyRoute: React.FC<{ children: React.ReactElement }> = ({ children }) => {
+  if (isMobileDevice()) {
+    return <Navigate to="/mobile-summary" replace />;
+  }
+
+  return children;
+};
 
 const App: React.FC = () => {
   return (
@@ -31,12 +41,22 @@ const App: React.FC = () => {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route
+            path="/mobile-summary"
+            element={
+              <ProtectedRoute>
+                <MobileSummary />
+              </ProtectedRoute>
+            }
+          />
           
           <Route
             path="/"
             element={
               <ProtectedRoute>
-                <MainLayout />
+                <DesktopOnlyRoute>
+                  <MainLayout />
+                </DesktopOnlyRoute>
               </ProtectedRoute>
             }
           >
