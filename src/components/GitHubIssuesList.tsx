@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Table, Empty, Button, Spin, Tag, Space, Typography } from 'antd';
-import { SyncOutlined, GithubOutlined, LinkOutlined } from '@ant-design/icons';
+import { SyncOutlined, GithubOutlined } from '@ant-design/icons';
 import { gitHubService } from '../services/gitHubService';
 import type { GitHubIssue } from '../services/gitHubService';
 import { notificationService } from '../services/notificationService';
