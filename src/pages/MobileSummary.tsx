@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Alert, Button, Card, Col, Row, Spin, Tag, Typography } from 'antd';
+import { Alert, Button, Card, Spin, Tag, Typography } from 'antd';
 import { LogoutOutlined, ReloadOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { authService } from '../services/authService';
@@ -90,27 +90,37 @@ const MobileSummary: React.FC = () => {
   };
 
   return (
-    <div style={{ minHeight: '100vh', background: '#141414', padding: 16 }}>
-      <div style={{ maxWidth: 800, margin: '0 auto' }}>
+    <div
+      style={{
+        minHeight: '100vh',
+        background: 'radial-gradient(circle at top, #1d2b2b 0%, #141414 45%)',
+        padding: 12,
+      }}
+    >
+      <div style={{ maxWidth: 560, margin: '0 auto' }}>
         <Card
           style={{
-            background: '#1f1f1f',
-            border: '1px solid #303030',
+            background: '#1b1b1f',
+            border: '1px solid #2f2f35',
+            borderRadius: 14,
           }}
-          styles={{ body: { padding: 16 } }}
+          styles={{ body: { padding: 14 } }}
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <div>
-              <Title level={4} style={{ color: '#fff', marginBottom: 4 }}>
+              <Title level={4} style={{ color: '#fff', margin: 0, lineHeight: 1.25 }}>
                 Hi, {user?.firstName || 'there'}
               </Title>
-              <Text style={{ color: '#8c8c8c' }}>Mobile quick summary</Text>
+              <Text style={{ color: '#8c8c8c', display: 'block', marginTop: 4 }}>
+                Mobile quick summary
+              </Text>
             </div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <Button icon={<ReloadOutlined />} onClick={fetchSummary} loading={loading}>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+              <Button icon={<ReloadOutlined />} onClick={fetchSummary} loading={loading} block>
                 Refresh
               </Button>
-              <Button danger icon={<LogoutOutlined />} onClick={handleLogout}>
+              <Button danger icon={<LogoutOutlined />} onClick={handleLogout} block>
                 Logout
               </Button>
             </div>
@@ -121,7 +131,7 @@ const MobileSummary: React.FC = () => {
             showIcon
             message="Desktop app recommended"
             description="This app is currently optimized for PC. On mobile, you can view summary information only."
-            style={{ marginTop: 16, marginBottom: 16 }}
+            style={{ marginTop: 8, marginBottom: 14, borderRadius: 10 }}
           />
 
           {loading ? (
@@ -130,43 +140,54 @@ const MobileSummary: React.FC = () => {
             </div>
           ) : (
             <>
-              <Row gutter={[12, 12]} style={{ marginBottom: 16 }}>
-                <Col xs={12} sm={8}>
-                  <Card size="small" style={{ background: '#262626', border: '1px solid #303030' }}>
-                    <Text style={{ color: '#8c8c8c' }}>Projects</Text>
-                    <Title level={3} style={{ color: '#fff', margin: 0 }}>{totals.projects}</Title>
-                  </Card>
-                </Col>
-                <Col xs={12} sm={8}>
-                  <Card size="small" style={{ background: '#262626', border: '1px solid #303030' }}>
-                    <Text style={{ color: '#8c8c8c' }}>Total Tasks</Text>
-                    <Title level={3} style={{ color: '#fff', margin: 0 }}>{totals.total}</Title>
-                  </Card>
-                </Col>
-                <Col xs={12} sm={8}>
-                  <Card size="small" style={{ background: '#262626', border: '1px solid #303030' }}>
-                    <Text style={{ color: '#8c8c8c' }}>Done</Text>
-                    <Title level={3} style={{ color: '#52c41a', margin: 0 }}>{totals.done}</Title>
-                  </Card>
-                </Col>
-              </Row>
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
+                  gap: 10,
+                  marginBottom: 14,
+                }}
+              >
+                <Card size="small" style={{ background: '#24242a', border: '1px solid #2f2f35', borderRadius: 10 }}>
+                  <Text style={{ color: '#8c8c8c' }}>Projects</Text>
+                  <Title level={3} style={{ color: '#fff', margin: 0 }}>{totals.projects}</Title>
+                </Card>
+                <Card size="small" style={{ background: '#24242a', border: '1px solid #2f2f35', borderRadius: 10 }}>
+                  <Text style={{ color: '#8c8c8c' }}>Total Tasks</Text>
+                  <Title level={3} style={{ color: '#fff', margin: 0 }}>{totals.total}</Title>
+                </Card>
+                <Card size="small" style={{ background: '#24242a', border: '1px solid #2f2f35', borderRadius: 10 }}>
+                  <Text style={{ color: '#8c8c8c' }}>Done</Text>
+                  <Title level={3} style={{ color: '#52c41a', margin: 0 }}>{totals.done}</Title>
+                </Card>
+              </div>
 
               <Card
                 size="small"
                 title={<span style={{ color: '#fff' }}>Task Status Overview</span>}
-                style={{ background: '#262626', border: '1px solid #303030', marginBottom: 16 }}
+                style={{ background: '#24242a', border: '1px solid #2f2f35', borderRadius: 10, marginBottom: 14 }}
               >
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                  <Tag color="default">To Do: {totals.todo}</Tag>
-                  <Tag color="processing">In Progress: {totals.inProgress}</Tag>
-                  <Tag color="success">Done: {totals.done}</Tag>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+                  <div style={{ background: '#1c1c21', border: '1px solid #333', borderRadius: 8, padding: '8px 6px', textAlign: 'center' }}>
+                    <Text style={{ color: '#8c8c8c' }}>Projects</Text>
+                    <Title level={5} style={{ color: '#d9d9d9', margin: 0 }}>{totals.todo}</Title>
+                    <Text style={{ color: '#8c8c8c', fontSize: 11 }}>To Do</Text>
+                  </div>
+                  <div style={{ background: '#1c1c21', border: '1px solid #333', borderRadius: 8, padding: '8px 6px', textAlign: 'center' }}>
+                    <Title level={5} style={{ color: '#1890ff', margin: 0 }}>{totals.inProgress}</Title>
+                    <Text style={{ color: '#8c8c8c', fontSize: 11 }}>In Progress</Text>
+                  </div>
+                  <div style={{ background: '#1c1c21', border: '1px solid #333', borderRadius: 8, padding: '8px 6px', textAlign: 'center' }}>
+                    <Title level={5} style={{ color: '#52c41a', margin: 0 }}>{totals.done}</Title>
+                    <Text style={{ color: '#8c8c8c', fontSize: 11 }}>Done</Text>
+                  </div>
                 </div>
               </Card>
 
               <Card
                 size="small"
                 title={<span style={{ color: '#fff' }}>Top Projects by Task Count</span>}
-                style={{ background: '#262626', border: '1px solid #303030' }}
+                style={{ background: '#24242a', border: '1px solid #2f2f35', borderRadius: 10 }}
               >
                 {recentProjects.length === 0 ? (
                   <Text style={{ color: '#8c8c8c' }}>No projects yet.</Text>
@@ -179,11 +200,14 @@ const MobileSummary: React.FC = () => {
                           display: 'flex',
                           justifyContent: 'space-between',
                           alignItems: 'center',
-                          borderBottom: '1px solid #303030',
+                          borderBottom: '1px solid #2f2f35',
                           paddingBottom: 8,
+                          gap: 8,
                         }}
                       >
-                        <Text style={{ color: '#fff' }}>{project.projectName}</Text>
+                        <Text style={{ color: '#fff', flex: 1, minWidth: 0, wordBreak: 'break-word' }}>
+                          {project.projectName}
+                        </Text>
                         <Tag color="blue">{project.total} tasks</Tag>
                       </div>
                     ))}
