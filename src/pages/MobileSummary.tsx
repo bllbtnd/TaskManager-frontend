@@ -143,7 +143,7 @@ const MobileSummary: React.FC = () => {
               <div
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
+                  gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
                   gap: 10,
                   marginBottom: 14,
                 }}
@@ -156,7 +156,15 @@ const MobileSummary: React.FC = () => {
                   <Text style={{ color: '#8c8c8c' }}>Total Tasks</Text>
                   <Title level={3} style={{ color: '#fff', margin: 0 }}>{totals.total}</Title>
                 </Card>
-                <Card size="small" style={{ background: '#24242a', border: '1px solid #2f2f35', borderRadius: 10 }}>
+                <Card
+                  size="small"
+                  style={{
+                    background: '#24242a',
+                    border: '1px solid #2f2f35',
+                    borderRadius: 10,
+                    gridColumn: '1 / -1',
+                  }}
+                >
                   <Text style={{ color: '#8c8c8c' }}>Done</Text>
                   <Title level={3} style={{ color: '#52c41a', margin: 0 }}>{totals.done}</Title>
                 </Card>
@@ -169,7 +177,6 @@ const MobileSummary: React.FC = () => {
               >
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
                   <div style={{ background: '#1c1c21', border: '1px solid #333', borderRadius: 8, padding: '8px 6px', textAlign: 'center' }}>
-                    <Text style={{ color: '#8c8c8c' }}>Projects</Text>
                     <Title level={5} style={{ color: '#d9d9d9', margin: 0 }}>{totals.todo}</Title>
                     <Text style={{ color: '#8c8c8c', fontSize: 11 }}>To Do</Text>
                   </div>
