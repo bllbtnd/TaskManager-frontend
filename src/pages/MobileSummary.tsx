@@ -6,7 +6,6 @@ import { authService } from '../services/authService';
 import { notificationService } from '../services/notificationService';
 import { projectService } from '../services/projectService';
 import { taskService } from '../services/taskService';
-import type { Task } from '../services/taskService';
 
 const { Title, Text } = Typography;
 
