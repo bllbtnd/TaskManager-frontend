@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button, Modal, Form, Input, Select, Spin, Space, DatePicker } from 'antd';
-import { PlusOutlined, ArrowLeftOutlined, SettingOutlined } from '@ant-design/icons';
+import { PlusOutlined, ArrowLeftOutlined, SettingOutlined, GithubOutlined } from '@ant-design/icons';
 import { notificationService } from '../services/notificationService';
 import {
   DndContext,
@@ -248,6 +248,14 @@ const TaskBoard: React.FC = () => {
               onClick={() => navigate(`/projects/${projectId}/settings`)}
             >
               Project Settings
+            </Button>
+          )}
+          {project?.githubUrl && (
+            <Button
+              icon={<GithubOutlined />}
+              onClick={() => navigate(`/projects/${projectId}/github`)}
+            >
+              GitHub Issues
             </Button>
           )}
           <Button type="primary" icon={<PlusOutlined />} onClick={openCreateModal} size="large">
