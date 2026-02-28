@@ -143,9 +143,36 @@ const TaskBoard: React.FC = () => {
 
     if (!over || !projectId) return;
 
-    const taskId = active.id as string;
+    const activeIdValue = active.id as string;
+    const newStatus = over.id as TaskStatus;
+
+    if (!newStatus || !['TO_DO', 'IN_PROGRESS', 'DONE'].includes(newStatus)) {
+      return;
+    }
+
+    if (activeIdValue.startsWith('gh-')) {
+      const issueId = activeIdValue.replace('gh-', '');
+      const issue = githubIssues.find((i) => i.id === issueId);
+      if (!issue) return;
+
+      const targetState: 'open' | 'closed' = newStatus === 'DONE' ? 'closed' : 'open';
+      if (issue.gitHubState === targetState && issue.boardStatus === newStatus) return;
+
+      try {
+        await gitHubService.updateGitHubIssueStatus(projectId, issueId, targetState, newStatus);
+        setGithubIssues((prev) =>
+          prev.map((i) => (i.id === issueId ? { ...i, gitHubState: targetState, boardStatus: newStatus } : i))
+        );
+        notificationService.success(`GitHub issue moved to ${newStatus.replace('_', ' ')}`);
+      } catch (error) {
+        notificationService.error('Failed to update GitHub issue status');
+      }
+      return;
+    }
+
+    const taskId = activeIdValue;
     const task = tasks.find((t) => t.id === taskId);
-    
+
     if (!task) return;
 
     // Only assigned users or project owner can move tasks
@@ -155,9 +182,6 @@ const TaskBoard: React.FC = () => {
       notificationService.error('Only assigned users or the project owner can move tasks');
       return;
     }
-
-    // The over.id should be the column status
-    const newStatus = over.id as TaskStatus;
 
     if (newStatus && task.status !== newStatus && ['TO_DO', 'IN_PROGRESS', 'DONE'].includes(newStatus)) {
       try {
@@ -175,8 +199,16 @@ const TaskBoard: React.FC = () => {
   };
 
   const getGitHubIssuesByStatus = (status: TaskStatus) => {
-    const targetState = status === 'DONE' ? 'closed' : 'open';
-    return githubIssues.filter((issue) => issue.gitHubState === targetState);
+    return githubIssues.filter((issue) => {
+      if (issue.boardStatus) {
+        return issue.boardStatus === status;
+      }
+      // fallback for legacy records without boardStatus
+      if (issue.gitHubState === 'closed') {
+        return status === 'DONE';
+      }
+      return status === 'TO_DO';
+    });
   };
 
   const handleSyncGitHub = async () => {
@@ -320,7 +352,10 @@ const TaskBoard: React.FC = () => {
             return (
               <DropZone key={column.status} status={column.status} title={column.title} color={column.color} count={columnTasks.length + columnIssues.length}>
                 <SortableContext
-                  items={columnTasks.map((t) => t.id)}
+                  items={[
+                    ...columnTasks.map((t) => t.id),
+                    ...columnIssues.map((issue) => `gh-${issue.id}`),
+                  ]}
                   strategy={verticalListSortingStrategy}
                 >
                   <div style={{ minHeight: 400 }}>
@@ -354,7 +389,7 @@ const TaskBoard: React.FC = () => {
                           />
                         ))}
                         {columnIssues.map((issue) => (
-                          <GitHubIssueCard key={issue.id} issue={issue} />
+                          <GitHubIssueCard key={issue.id} issue={issue} draggableId={`gh-${issue.id}`} />
                         ))}
                       </>
                     )}

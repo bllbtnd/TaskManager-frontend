@@ -1,14 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Button, Form, Input, Card, Spin, Space, List, Popconfirm, Modal, Typography, Table } from 'antd';
-import { ArrowLeftOutlined, UserAddOutlined, DeleteOutlined, SaveOutlined, UserDeleteOutlined, SyncOutlined, GithubOutlined } from '@ant-design/icons';
+import { Button, Form, Input, Card, Spin, Space, List, Popconfirm, Modal, Typography } from 'antd';
+import { ArrowLeftOutlined, UserAddOutlined, DeleteOutlined, SaveOutlined, UserDeleteOutlined } from '@ant-design/icons';
 import { notificationService } from '../services/notificationService';
 import { projectService } from '../services/projectService';
 import type { Project, ProjectRequest } from '../services/projectService';
 import { userService } from '../services/userService';
 import type { UserProfile } from '../services/userService';
-import { gitHubService } from '../services/gitHubService';
-import type { GitHubIssue } from '../services/gitHubService';
 
 const { TextArea } = Input;
 const { Title, Text } = Typography;
@@ -24,9 +22,6 @@ const ProjectSettings: React.FC = () => {
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteLoading, setInviteLoading] = useState(false);
   const [form] = Form.useForm();
-  const [gitHubIssues, setGitHubIssues] = useState<GitHubIssue[]>([]);
-  const [gitHubToken, setGitHubToken] = useState('');
-  const [syncLoading, setSyncLoading] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -58,16 +53,6 @@ const ProjectSettings: React.FC = () => {
         description: projectData.description,
         githubUrl: projectData.githubUrl || '',
       });
-
-      // Load GitHub issues if GitHub URL is set
-      if (projectData.githubUrl) {
-        try {
-          const issues = await gitHubService.getGitHubIssues(projectId);
-          setGitHubIssues(issues);
-        } catch (error) {
-          // GitHub issues might not be synced yet, this is okay
-        }
-      }
     } catch (error) {
       notificationService.error('Failed to fetch project data');
       navigate('/projects');
@@ -128,27 +113,6 @@ const ProjectSettings: React.FC = () => {
       navigate('/projects');
     } catch (error) {
       notificationService.error('Failed to delete project');
-    }
-  };
-
-  const handleSyncGitHub = async () => {
-    if (!project?.githubUrl) {
-      notificationService.error('Please set a GitHub URL first');
-      return;
-    }
-
-    if (!projectId) return;
-    setSyncLoading(true);
-    try {
-      const result = await gitHubService.syncGitHubIssues(projectId, gitHubToken);
-      notificationService.success(`${result.message} (${result.issueCount} issues)`);
-      setGitHubToken('');
-      const issues = await gitHubService.getGitHubIssues(projectId);
-      setGitHubIssues(issues);
-    } catch (error) {
-      notificationService.error('Failed to sync GitHub issues. Check your token and repository URL.');
-    } finally {
-      setSyncLoading(false);
     }
   };
 
@@ -238,100 +202,6 @@ const ProjectSettings: React.FC = () => {
               </Button>
             </Form.Item>
           </Form>
-        </Card>
-
-        {/* GitHub Integration */}
-        <Card title={<Space><GithubOutlined /> GitHub Integration</Space>} style={{ background: '#1f1f1f', border: '1px solid #303030' }}>
-          {!project?.githubUrl ? (
-            <div style={{ color: '#8c8c8c', paddingBottom: 16 }}>
-              <Text type="secondary">
-                Set a GitHub URL in the General Settings above to enable issue synchronization
-              </Text>
-            </div>
-          ) : (
-            <>
-              <div style={{ marginBottom: 20 }}>
-                <Text strong style={{ display: 'block', marginBottom: 12 }}>Sync GitHub Issues</Text>
-                <Space direction="vertical" style={{ width: '100%' }}>
-                  <Text type="secondary" style={{ fontSize: 12 }}>
-                    Enter your GitHub personal access token (optional for public repos) to sync issues
-                  </Text>
-                  <Space style={{ width: '100%' }}>
-                    <Input
-                      type="password"
-                      placeholder="GitHub Personal Access Token (optional)"
-                      value={gitHubToken}
-                      onChange={(e) => setGitHubToken(e.target.value)}
-                      style={{ maxWidth: 300 }}
-                    />
-                    <Button
-                      type="primary"
-                      icon={<SyncOutlined />}
-                      loading={syncLoading}
-                      onClick={handleSyncGitHub}
-                    >
-                      Sync Issues
-                    </Button>
-                  </Space>
-                </Space>
-              </div>
-
-              {gitHubIssues.length > 0 && (
-                <div>
-                  <Text strong style={{ display: 'block', marginBottom: 12 }}>
-                    Synced GitHub Issues ({gitHubIssues.length})
-                  </Text>
-                  <Table
-                    dataSource={gitHubIssues}
-                    columns={[
-                      {
-                        title: '#',
-                        dataIndex: 'gitHubIssueNumber',
-                        width: 60,
-                      },
-                      {
-                        title: 'Title',
-                        dataIndex: 'gitHubTitle',
-                        render: (text, record) => (
-                          <a href={record.gitHubUrl} target="_blank" rel="noopener noreferrer">
-                            {text}
-                          </a>
-                        ),
-                      },
-                      {
-                        title: 'State',
-                        dataIndex: 'gitHubState',
-                        width: 80,
-                        render: (state) => (
-                          <span style={{ color: state === 'open' ? '#52c41a' : '#8c8c8c' }}>
-                            {state === 'open' ? '●' : '○'} {state}
-                          </span>
-                        ),
-                      },
-                      {
-                        title: 'Labels',
-                        dataIndex: 'gitHubLabels',
-                        render: (labels) => labels ? labels.split(', ').map((label: string) => (
-                          <span key={label} style={{
-                            background: '#262626',
-                            padding: '2px 8px',
-                            borderRadius: 3,
-                            marginRight: 4,
-                            fontSize: 12,
-                          }}>
-                            {label}
-                          </span>
-                        )) : '-',
-                      },
-                    ]}
-                    pagination={false}
-                    rowKey="id"
-                    style={{ marginTop: 12 }}
-                  />
-                </div>
-              )}
-            </>
-          )}
         </Card>
 
         {/* Team Management */}

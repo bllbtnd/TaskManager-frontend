@@ -7,6 +7,7 @@ export interface GitHubIssue {
   gitHubTitle: string;
   gitHubDescription: string;
   gitHubState: 'open' | 'closed';
+  boardStatus?: 'TO_DO' | 'IN_PROGRESS' | 'DONE';
   gitHubUrl: string;
   gitHubLabels?: string;
   gitHubAssignee?: string;
@@ -42,6 +43,19 @@ export const gitHubService = {
 
   getGitHubIssues: async (projectId: string): Promise<GitHubIssue[]> => {
     const response = await api.get(`/projects/${projectId}/github/issues`);
+    return response.data;
+  },
+
+  updateGitHubIssueStatus: async (
+    projectId: string,
+    issueId: string,
+    state: 'open' | 'closed',
+    boardStatus: 'TO_DO' | 'IN_PROGRESS' | 'DONE'
+  ): Promise<{ success: boolean; message: string; state: 'open' | 'closed'; boardStatus: 'TO_DO' | 'IN_PROGRESS' | 'DONE' }> => {
+    const response = await api.patch(`/projects/${projectId}/github/issues/${issueId}/status`, {
+      state,
+      boardStatus,
+    });
     return response.data;
   },
 
