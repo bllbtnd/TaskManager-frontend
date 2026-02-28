@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { Spin, Result } from 'antd';
+import { Spin } from 'antd';
 import { gitHubService } from '../services/gitHubService';
 import { notificationService } from '../services/notificationService';
 

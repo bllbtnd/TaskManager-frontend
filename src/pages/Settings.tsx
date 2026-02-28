@@ -25,8 +25,7 @@ import {
   SaveOutlined,
   CloseOutlined,
   DeleteOutlined,
-  GithubOutlined,
-  LinkOutlined,
+  GithubOutlined
 } from '@ant-design/icons';
 import { userService } from '../services/userService';
 import type { UserSettings, UpdateProfileRequest } from '../services/userService';
