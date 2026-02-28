@@ -19,6 +19,7 @@ import type { Project } from '../services/projectService';
 import { userService } from '../services/userService';
 import type { UserProfile } from '../services/userService';
 import TaskCard from '../components/TaskCard';
+import GitHubIssuesList from '../components/GitHubIssuesList';
 import DropZone from '../components/DropZone.tsx';
 import dayjs from 'dayjs';
 
@@ -271,6 +272,10 @@ const TaskBoard: React.FC = () => {
         <StatCard label="Avg Time per Task" value={formatTotalTime(avgTimePerTask)} color="#faad14" />
         <StatCard label="Completion Rate" value={`${completionRate}%`} color="#1890ff" />
       </div>
+
+      {project?.githubUrl && (
+        <GitHubIssuesList projectId={projectId!} compact={false} />
+      )}
 
       <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
