@@ -9,6 +9,7 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
+  closestCorners,
 } from '@dnd-kit/core';
 import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
@@ -137,6 +138,25 @@ const TaskBoard: React.FC = () => {
     setActiveId(event.active.id as string);
   };
 
+  const resolveDropStatus = (overId: string): TaskStatus | null => {
+    if (['TO_DO', 'IN_PROGRESS', 'DONE'].includes(overId)) {
+      return overId as TaskStatus;
+    }
+    // Dropped on a task card — find which column it belongs to
+    const task = tasks.find((t) => t.id === overId);
+    if (task) return task.status as TaskStatus;
+    // Dropped on a GitHub issue card
+    if (overId.startsWith('gh-')) {
+      const ghId = overId.replace('gh-', '');
+      const issue = githubIssues.find((i) => i.id === ghId);
+      if (issue) {
+        if (issue.boardStatus) return issue.boardStatus as TaskStatus;
+        return issue.gitHubState === 'closed' ? 'DONE' : 'TO_DO';
+      }
+    }
+    return null;
+  };
+
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     setActiveId(null);
@@ -144,9 +164,9 @@ const TaskBoard: React.FC = () => {
     if (!over || !projectId) return;
 
     const activeIdValue = active.id as string;
-    const newStatus = over.id as TaskStatus;
+    const newStatus = resolveDropStatus(over.id as string);
 
-    if (!newStatus || !['TO_DO', 'IN_PROGRESS', 'DONE'].includes(newStatus)) {
+    if (!newStatus) {
       return;
     }
 
@@ -234,6 +254,9 @@ const TaskBoard: React.FC = () => {
   };
 
   const activeTask = tasks.find((task) => task.id === activeId);
+  const activeGhIssue = activeId?.startsWith('gh-')
+    ? githubIssues.find((i) => `gh-${i.id}` === activeId)
+    : null;
 
   const totalTimeSpent = tasks.reduce((sum, task) => sum + (task.timeSpentMs || 0), 0);
   const totalActiveWork = tasks.reduce((sum, task) => sum + (task.activeWorkMs || 0), 0);
@@ -344,7 +367,7 @@ const TaskBoard: React.FC = () => {
         <StatCard label="Completion Rate" value={`${completionRate}%`} color="#1890ff" />
       </div>
 
-      <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+      <DndContext sensors={sensors} collisionDetection={closestCorners} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
           {statusColumns.map((column) => {
             const columnTasks = getTasksByStatus(column.status);
@@ -416,6 +439,23 @@ const TaskBoard: React.FC = () => {
               <p style={{ color: '#8c8c8c', fontSize: 12, margin: '8px 0 0 0' }}>
                 {activeTask.description || 'No description'}
               </p>
+            </div>
+          ) : activeGhIssue ? (
+            <div style={{
+              background: '#262626',
+              border: '2px solid #1890ff',
+              borderRadius: 8,
+              padding: 16,
+              cursor: 'grabbing',
+              opacity: 1,
+              minWidth: 250,
+              boxShadow: '0 5px 15px rgba(0, 0, 0, 0.5)',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                <GithubOutlined style={{ color: '#1890ff', fontSize: 14 }} />
+                <span style={{ color: '#999', fontSize: 12 }}>#{activeGhIssue.gitHubIssueNumber}</span>
+              </div>
+              <h4 style={{ color: '#fff', margin: 0 }}>{activeGhIssue.gitHubTitle}</h4>
             </div>
           ) : null}
         </DragOverlay>
