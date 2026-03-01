@@ -23,7 +23,7 @@ const GitHubIssueCard: React.FC<GitHubIssueCardProps> = ({ issue, draggableId })
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.6 : 1,
+    opacity: isDragging ? 0.5 : 1,
     cursor: isDragging ? 'grabbing' : 'grab',
   };
 
@@ -32,7 +32,7 @@ const GitHubIssueCard: React.FC<GitHubIssueCardProps> = ({ issue, draggableId })
       <Card
         size="small"
         style={{
-          marginBottom: 8,
+          marginBottom: 12,
           background: '#262626',
           border: '1px solid #434343',
           cursor: 'grab',

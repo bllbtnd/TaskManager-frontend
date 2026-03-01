@@ -17,10 +17,10 @@ const DropZone: React.FC<DropZoneProps> = ({ status, title, color: _color, count
 
   return (
     <div
-      ref={setNodeRef}
       style={{
         display: 'flex',
         flexDirection: 'column',
+        height: '100%',
       }}
     >
       <Card
@@ -37,14 +37,22 @@ const DropZone: React.FC<DropZoneProps> = ({ status, title, color: _color, count
           flex: 1,
           transition: 'all 0.2s ease',
         }}
+        bodyStyle={{
+          padding: '8px',
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+        }}
       >
         <div
+          ref={setNodeRef}
           style={{
             minHeight: 400,
-            padding: 8,
+            flex: 1,
             borderRadius: 4,
             backgroundColor: isOver ? 'rgba(24, 144, 255, 0.05)' : 'transparent',
             transition: 'background-color 0.2s ease',
+            pointerEvents: 'auto',
           }}
         >
           {children}
