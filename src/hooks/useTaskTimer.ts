@@ -32,7 +32,7 @@ export const useTaskTimer = (
 ) => {
   const [currentTime, setCurrentTime] = useState(Date.now());
 
-  // Update current time every second when timer is active
+  // Update current time every second when timer is active (including paused)
   useEffect(() => {
     if (timerActive) {
       setCurrentTime(Date.now());
@@ -58,12 +58,10 @@ export const useTaskTimer = (
     const accumulated = sessionActiveWorkMs || 0;
 
     if (pausedAt) {
-      // Paused: show accumulated active work, total from original start to pause
-      const pauseTime = parseServerDate(pausedAt);
-      const sessionTotal = pauseTime - originalStart;
+      // Paused: active work is frozen, but total elapsed keeps ticking
       return {
         activeWorkMs: baseActiveWorkMs + accumulated,
-        totalElapsedMs: baseTotalMs + sessionTotal,
+        totalElapsedMs: baseTotalMs + (currentTime - originalStart),
         isPaused: true,
       };
     } else {

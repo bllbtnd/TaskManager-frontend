@@ -266,9 +266,50 @@ const TaskBoard: React.FC = () => {
     ? githubIssues.find((i) => `gh-${i.id}` === activeId)
     : null;
 
-  const totalTimeSpent = tasks.reduce((sum, task) => sum + (task.timeSpentMs || 0), 0);
-  const totalActiveWork = tasks.reduce((sum, task) => sum + (task.activeWorkMs || 0), 0);
-  const totalIdleTime = totalTimeSpent - totalActiveWork;
+  // Live-ticking summary: for running timers, compute session values from timestamps
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    const hasActiveTimer = tasks.some((t) => t.timerActive) || githubIssues.some((i) => i.timerActive);
+    if (hasActiveTimer) {
+      const interval = setInterval(() => setNow(Date.now()), 1000);
+      return () => clearInterval(interval);
+    }
+  }, [tasks, githubIssues]);
+
+  const parseServerDate = (dateStr: string): number => {
+    if (!dateStr) return 0;
+    if (dateStr.endsWith('Z') || dateStr.includes('+') || /\d{2}:\d{2}:\d{2}-/.test(dateStr)) {
+      return new Date(dateStr).getTime();
+    }
+    return new Date(dateStr + 'Z').getTime();
+  };
+
+  const getLiveTimerValues = (item: { timerActive?: boolean; timerStartedAt?: string; sessionStartedAt?: string; pausedAt?: string; sessionActiveWorkMs?: number; activeWorkMs?: number; timeSpentMs?: number }) => {
+    const baseActive = item.activeWorkMs || 0;
+    const baseTotal = item.timeSpentMs || 0;
+    if (!item.timerActive || !item.timerStartedAt) {
+      return { activeWorkMs: baseActive, totalElapsedMs: baseTotal };
+    }
+    const lastResumeTime = parseServerDate(item.timerStartedAt);
+    const originalStart = item.sessionStartedAt ? parseServerDate(item.sessionStartedAt) : lastResumeTime;
+    const accumulated = item.sessionActiveWorkMs || 0;
+    if (item.pausedAt) {
+      return {
+        activeWorkMs: baseActive + accumulated,
+        totalElapsedMs: baseTotal + (now - originalStart),
+      };
+    } else {
+      const currentActiveSegment = now - lastResumeTime;
+      return {
+        activeWorkMs: baseActive + accumulated + currentActiveSegment,
+        totalElapsedMs: baseTotal + (now - originalStart),
+      };
+    }
+  };
+
+  const totalActiveWork = tasks.reduce((sum, task) => sum + getLiveTimerValues(task).activeWorkMs, 0);
+  const totalTimeSpent = tasks.reduce((sum, task) => sum + getLiveTimerValues(task).totalElapsedMs, 0);
+  const totalIdleTime = Math.max(0, totalTimeSpent - totalActiveWork);
 
   const formatTotalTime = (ms: number) => {
     if (!ms) return '0s';
