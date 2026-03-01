@@ -204,11 +204,19 @@ const TaskBoard: React.FC = () => {
     }
 
     if (newStatus && task.status !== newStatus && ['TO_DO', 'IN_PROGRESS', 'DONE'].includes(newStatus)) {
+      // Optimistically update the UI
+      setTasks((prev) =>
+        prev.map((t) => (t.id === taskId ? { ...t, status: newStatus } : t))
+      );
+      
       try {
         await taskService.updateTaskStatus(projectId, taskId, newStatus);
         notificationService.success(`Task moved to ${newStatus.replace(/_/g, ' ')}`);
-        fetchData();
       } catch (error) {
+        // Revert on error
+        setTasks((prev) =>
+          prev.map((t) => (t.id === taskId ? { ...t, status: task.status } : t))
+        );
         notificationService.error('Failed to update task status');
       }
     }
@@ -412,7 +420,17 @@ const TaskBoard: React.FC = () => {
                           />
                         ))}
                         {columnIssues.map((issue) => (
-                          <GitHubIssueCard key={issue.id} issue={issue} draggableId={`gh-${issue.id}`} />
+                          <GitHubIssueCard
+                            key={issue.id}
+                            issue={issue}
+                            draggableId={`gh-${issue.id}`}
+                            projectId={projectId!}
+                            onIssueUpdate={(updatedIssue) => {
+                              setGithubIssues((prev) =>
+                                prev.map((i) => (i.id === updatedIssue.id ? updatedIssue : i))
+                              );
+                            }}
+                          />
                         ))}
                       </>
                     )}

@@ -38,6 +38,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete, projectId, 
     task.timerStartedAt,
     task.pausedAt,
     task.sessionActiveWorkMs,
+    task.sessionStartedAt,
     task.activeWorkMs || 0,
     task.timeSpentMs || 0
   );
@@ -104,7 +105,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete, projectId, 
 
   const style = {
     transform: CSS.Transform.toString(transform),
-    transition,
+    transition: transition || 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
     opacity: isDragging ? 0.5 : 1,
     cursor: task.timerActive ? 'not-allowed' : isDragging ? 'grabbing' : 'grab',
   };
@@ -134,12 +135,13 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete, projectId, 
           background: task.timerActive ? '#1a3a3a' : '#262626',
           border: task.timerActive ? '2px solid #1890ff' : '1px solid #434343',
           cursor: task.timerActive ? 'not-allowed' : 'grab',
+          transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
         }}
         hoverable={!task.timerActive}
         actions={[
           canControlTimer ? (
             task.timerActive ? (
-              <>
+              <div style={{ display: 'flex', justifyContent: 'center', gap: 12 }}>
                 {timer.isPaused ? (
                   <Tooltip title="Resume work">
                     <PlayCircleOutlined
@@ -163,16 +165,17 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete, projectId, 
                     />
                   </Tooltip>
                 )}
-                <StopOutlined
-                  key="stop"
-                  style={{ color: '#ff4d4f', fontSize: 16 }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleStopTimer();
-                  }}
-                  title="Stop timer"
-                />
-              </>
+                <Tooltip title="Stop timer">
+                  <StopOutlined
+                    key="stop"
+                    style={{ color: '#ff4d4f', fontSize: 16 }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleStopTimer();
+                    }}
+                  />
+                </Tooltip>
+              </div>
             ) : (
               <PlayCircleOutlined
                 key="play"

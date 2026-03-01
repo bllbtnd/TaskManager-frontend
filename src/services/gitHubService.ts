@@ -12,6 +12,14 @@ export interface GitHubIssue {
   gitHubLabels?: string;
   gitHubAssignee?: string;
   syncedAt: string;
+  // Timer fields
+  timeSpentMs?: number;
+  activeWorkMs?: number;
+  timerStartedAt?: string;
+  sessionStartedAt?: string;
+  pausedAt?: string;
+  sessionActiveWorkMs?: number;
+  timerActive?: boolean;
 }
 
 export interface SyncGitHubRequest {
@@ -69,6 +77,26 @@ export const gitHubService = {
 
   closeGitHubIssue: async (projectId: string, taskId: string): Promise<{ success: boolean; message: string }> => {
     const response = await api.post(`/projects/${projectId}/tasks/${taskId}/github/close-issue`, {});
+    return response.data;
+  },
+
+  startIssueTimer: async (projectId: string, issueId: string): Promise<GitHubIssue> => {
+    const response = await api.post(`/projects/${projectId}/github/issues/${issueId}/timer/start`);
+    return response.data;
+  },
+
+  pauseIssueTimer: async (projectId: string, issueId: string): Promise<GitHubIssue> => {
+    const response = await api.post(`/projects/${projectId}/github/issues/${issueId}/timer/pause`);
+    return response.data;
+  },
+
+  resumeIssueTimer: async (projectId: string, issueId: string): Promise<GitHubIssue> => {
+    const response = await api.post(`/projects/${projectId}/github/issues/${issueId}/timer/resume`);
+    return response.data;
+  },
+
+  stopIssueTimer: async (projectId: string, issueId: string): Promise<GitHubIssue> => {
+    const response = await api.post(`/projects/${projectId}/github/issues/${issueId}/timer/stop`);
     return response.data;
   },
 };

@@ -16,6 +16,7 @@ export interface Task {
   timeSpentMs?: number;
   activeWorkMs?: number;
   timerStartedAt?: string;
+  sessionStartedAt?: string;
   pausedAt?: string;
   sessionActiveWorkMs?: number;
   timerActive?: boolean;
