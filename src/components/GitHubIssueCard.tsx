@@ -33,9 +33,10 @@ const GitHubIssueCard: React.FC<GitHubIssueCardProps> = ({ issue, draggableId })
         size="small"
         style={{
           marginBottom: 12,
-          background: '#262626',
-          border: '1px solid #434343',
+          background: isDragging ? '#1a3a3a' : '#262626',
+          border: isDragging ? '2px solid #1890ff' : '1px solid #434343',
           cursor: 'grab',
+          transition: 'all 0.2s ease',
         }}
         hoverable
         title={

@@ -17,6 +17,7 @@ const DropZone: React.FC<DropZoneProps> = ({ status, title, color: _color, count
 
   return (
     <div
+      ref={setNodeRef}
       style={{
         display: 'flex',
         flexDirection: 'column',
@@ -45,14 +46,12 @@ const DropZone: React.FC<DropZoneProps> = ({ status, title, color: _color, count
         }}
       >
         <div
-          ref={setNodeRef}
           style={{
             minHeight: 400,
             flex: 1,
             borderRadius: 4,
             backgroundColor: isOver ? 'rgba(24, 144, 255, 0.05)' : 'transparent',
             transition: 'background-color 0.2s ease',
-            pointerEvents: 'auto',
           }}
         >
           {children}
