@@ -58,11 +58,15 @@ export const gitHubService = {
     projectId: string,
     issueId: string,
     state: 'open' | 'closed',
-    boardStatus: 'TO_DO' | 'IN_PROGRESS' | 'DONE'
+    boardStatus: 'TO_DO' | 'IN_PROGRESS' | 'DONE',
+    timeSpentMs?: number,
+    activeWorkMs?: number
   ): Promise<{ success: boolean; message: string; state: 'open' | 'closed'; boardStatus: 'TO_DO' | 'IN_PROGRESS' | 'DONE' }> => {
     const response = await api.patch(`/projects/${projectId}/github/issues/${issueId}/status`, {
       state,
       boardStatus,
+      timeSpentMs,
+      activeWorkMs,
     });
     return response.data;
   },

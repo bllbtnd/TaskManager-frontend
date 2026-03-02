@@ -111,6 +111,8 @@ const TaskBoard: React.FC = () => {
       status: task.status,
       assignedToEmails: task.assignedToEmails || [],
       deadline: task.deadline ? dayjs(task.deadline) : undefined,
+      activeWorkMs: task.activeWorkMs ? Math.floor(task.activeWorkMs / 1000) : 0,
+      idleTimeMs: task.timeSpentMs && task.activeWorkMs ? Math.floor((task.timeSpentMs - task.activeWorkMs) / 1000) : 0,
     });
     setModalVisible(true);
   };
@@ -531,12 +533,18 @@ const TaskBoard: React.FC = () => {
         footer={null}
       >
         <Form form={form} onFinish={(values: any) => {
+          const activeWorkMs = (values.activeWorkMs || 0) * 1000;
+          const idleTimeMs = (values.idleTimeMs || 0) * 1000;
+          const timeSpentMs = activeWorkMs + idleTimeMs;
+          
           const request: TaskRequest = {
             title: values.title,
             description: values.description,
             status: values.status,
             assignedToEmails: values.assignedToEmails || [],
             deadline: values.deadline ? values.deadline.toISOString() : undefined,
+            activeWorkMs: activeWorkMs,
+            timeSpentMs: timeSpentMs,
           };
           handleCreateOrUpdate(request);
         }} layout="vertical">
@@ -577,6 +585,26 @@ const TaskBoard: React.FC = () => {
               placeholder="Select deadline"
             />
           </Form.Item>
+
+          {editingTask && (
+            <>
+              <Form.Item 
+                name="activeWorkMs" 
+                label="Active Work Time (seconds)"
+                tooltip="Time spent actively working on this task"
+              >
+                <Input type="number" min={0} placeholder="0" />
+              </Form.Item>
+
+              <Form.Item 
+                name="idleTimeMs" 
+                label="Idle Time (seconds)"
+                tooltip="Time spent on breaks while timer was running"
+              >
+                <Input type="number" min={0} placeholder="0" />
+              </Form.Item>
+            </>
+          )}
 
           <Form.Item>
             <Button type="primary" htmlType="submit" block>

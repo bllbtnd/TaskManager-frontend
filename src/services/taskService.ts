@@ -28,6 +28,8 @@ export interface TaskRequest {
   status?: TaskStatus;
   assignedToEmails?: string[];
   deadline?: string;
+  timeSpentMs?: number;
+  activeWorkMs?: number;
 }
 
 export const taskService = {

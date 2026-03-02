@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Card, Tag, Space, Tooltip } from 'antd';
-import { GithubOutlined, PlayCircleOutlined, PauseOutlined, StopOutlined } from '@ant-design/icons';
+import { Card, Tag, Space, Tooltip, Modal, Form, Input, Button } from 'antd';
+import { GithubOutlined, PlayCircleOutlined, PauseOutlined, StopOutlined, EditOutlined } from '@ant-design/icons';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { GitHubIssue } from '../services/gitHubService';
@@ -36,6 +36,40 @@ const GitHubIssueCard: React.FC<GitHubIssueCardProps> = ({ issue, draggableId, p
   );
 
   const [_isToggling, setIsToggling] = useState(false);
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [form] = Form.useForm();
+
+  const handleEditClick = () => {
+    form.setFieldsValue({
+      activeWorkMs: issue.activeWorkMs ? Math.floor(issue.activeWorkMs / 1000) : 0,
+      idleTimeMs: issue.timeSpentMs && issue.activeWorkMs ? Math.floor((issue.timeSpentMs - issue.activeWorkMs) / 1000) : 0,
+    });
+    setEditModalVisible(true);
+  };
+
+  const handleSaveEdit = async (values: any) => {
+    try {
+      const activeWorkMs = (values.activeWorkMs || 0) * 1000;
+      const idleTimeMs = (values.idleTimeMs || 0) * 1000;
+      const timeSpentMs = activeWorkMs + idleTimeMs;
+
+      await gitHubService.updateGitHubIssueStatus(
+        projectId,
+        issue.id,
+        issue.gitHubState,
+        issue.boardStatus || 'TO_DO',
+        timeSpentMs,
+        activeWorkMs
+      );
+      
+      // Merge the time updates with the issue
+      onIssueUpdate({ ...issue, timeSpentMs, activeWorkMs });
+      notificationService.success('Issue time updated successfully');
+      setEditModalVisible(false);
+    } catch (error) {
+      notificationService.error('Failed to update issue time');
+    }
+  };
 
   const handleStartTimer = async () => {
     setIsToggling(true);
@@ -146,6 +180,12 @@ const GitHubIssueCard: React.FC<GitHubIssueCardProps> = ({ issue, draggableId, p
               />
             </Tooltip>
           ),
+          <Tooltip key="edit" title="Edit time">
+            <EditOutlined
+              style={{ fontSize: 16 }}
+              onClick={(e) => { e.stopPropagation(); handleEditClick(); }}
+            />
+          </Tooltip>,
         ]}
         title={
           <Space size={6} style={{ width: '100%' }}>
@@ -214,6 +254,37 @@ const GitHubIssueCard: React.FC<GitHubIssueCardProps> = ({ issue, draggableId, p
           </div>
         </div>
       </Card>
+
+      <Modal
+        title="Edit Issue Time"
+        open={editModalVisible}
+        onCancel={() => setEditModalVisible(false)}
+        footer={null}
+      >
+        <Form form={form} onFinish={handleSaveEdit} layout="vertical">
+          <Form.Item 
+            name="activeWorkMs" 
+            label="Active Work Time (seconds)"
+            tooltip="Time spent actively working on this issue"
+          >
+            <Input type="number" min={0} placeholder="0" />
+          </Form.Item>
+
+          <Form.Item 
+            name="idleTimeMs" 
+            label="Idle Time (seconds)"
+            tooltip="Time spent on breaks while timer was running"
+          >
+            <Input type="number" min={0} placeholder="0" />
+          </Form.Item>
+
+          <Form.Item>
+            <Button type="primary" htmlType="submit" block>
+              Update
+            </Button>
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 };
