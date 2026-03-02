@@ -5,6 +5,7 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { GitHubIssue } from '../services/gitHubService';
 import type { TaskStatus } from '../services/taskService';
+import type { UserProfile } from '../services/userService';
 import { gitHubService } from '../services/gitHubService';
 import { notificationService } from '../services/notificationService';
 import { useTaskTimer } from '../hooks/useTaskTimer';
@@ -15,9 +16,10 @@ interface GitHubIssueCardProps {
   projectId: string;
   onIssueUpdate: (updatedIssue: GitHubIssue) => void;
   statusColumns?: { status: TaskStatus; title: string; color: string }[];
+  currentUser?: UserProfile | null;
 }
 
-const GitHubIssueCard: React.FC<GitHubIssueCardProps> = ({ issue, draggableId, projectId, onIssueUpdate, statusColumns = [] }) => {
+const GitHubIssueCard: React.FC<GitHubIssueCardProps> = ({ issue, draggableId, projectId, onIssueUpdate, statusColumns = [], currentUser }) => {
   const {
     attributes,
     listeners,
@@ -46,9 +48,14 @@ const GitHubIssueCard: React.FC<GitHubIssueCardProps> = ({ issue, draggableId, p
   const currentColumnIndex = statusColumns.findIndex(col => col.status === currentStatus);
   const canMoveLeft = currentColumnIndex > 0;
   const canMoveRight = currentColumnIndex < statusColumns.length - 1;
+  const hasGitHubConnected = !!currentUser?.githubUsername;
 
   const handleMoveLeft = async () => {
     if (!canMoveLeft) return;
+    if (!hasGitHubConnected) {
+      notificationService.error('You must connect your GitHub account to move GitHub issues');
+      return;
+    }
     const newStatus = statusColumns[currentColumnIndex - 1].status;
     const targetState: 'open' | 'closed' = newStatus === 'DONE' ? 'closed' : 'open';
     try {
@@ -56,12 +63,17 @@ const GitHubIssueCard: React.FC<GitHubIssueCardProps> = ({ issue, draggableId, p
       onIssueUpdate({ ...issue, gitHubState: targetState, boardStatus: newStatus });
       notificationService.success(`Issue moved to ${newStatus.replace(/_/g, ' ')}`);
     } catch (error) {
-      notificationService.error('Failed to move issue');
+      const errorMsg = error instanceof Error ? error.message : 'Failed to move issue';
+      notificationService.error(errorMsg);
     }
   };
 
   const handleMoveRight = async () => {
     if (!canMoveRight) return;
+    if (!hasGitHubConnected) {
+      notificationService.error('You must connect your GitHub account to move GitHub issues');
+      return;
+    }
     const newStatus = statusColumns[currentColumnIndex + 1].status;
     const targetState: 'open' | 'closed' = newStatus === 'DONE' ? 'closed' : 'open';
     try {
@@ -69,7 +81,8 @@ const GitHubIssueCard: React.FC<GitHubIssueCardProps> = ({ issue, draggableId, p
       onIssueUpdate({ ...issue, gitHubState: targetState, boardStatus: newStatus });
       notificationService.success(`Issue moved to ${newStatus.replace(/_/g, ' ')}`);
     } catch (error) {
-      notificationService.error('Failed to move issue');
+      const errorMsg = error instanceof Error ? error.message : 'Failed to move issue';
+      notificationService.error(errorMsg);
     }
   };
 
@@ -176,7 +189,7 @@ const GitHubIssueCard: React.FC<GitHubIssueCardProps> = ({ issue, draggableId, p
         }}
         hoverable={!issue.timerActive}
         actions={[
-          canMoveLeft ? (
+          canMoveLeft && hasGitHubConnected ? (
             <Tooltip key="move-left" title="Move to previous column">
               <ArrowLeftOutlined
                 style={{ color: '#1890ff', fontSize: 16 }}
@@ -184,12 +197,16 @@ const GitHubIssueCard: React.FC<GitHubIssueCardProps> = ({ issue, draggableId, p
               />
             </Tooltip>
           ) : (
-            <ArrowLeftOutlined
-              key="move-left-disabled"
-              style={{ color: '#8c8c8c', fontSize: 16, cursor: 'not-allowed' }}
-            />
+            <Tooltip 
+              key="move-left-disabled" 
+              title={!hasGitHubConnected ? "Connect GitHub to move issues" : "Cannot move further left"}
+            >
+              <ArrowLeftOutlined
+                style={{ color: '#8c8c8c', fontSize: 16, cursor: 'not-allowed' }}
+              />
+            </Tooltip>
           ),
-          canMoveRight ? (
+          canMoveRight && hasGitHubConnected ? (
             <Tooltip key="move-right" title="Move to next column">
               <ArrowRightOutlined
                 style={{ color: '#1890ff', fontSize: 16 }}
@@ -197,10 +214,14 @@ const GitHubIssueCard: React.FC<GitHubIssueCardProps> = ({ issue, draggableId, p
               />
             </Tooltip>
           ) : (
-            <ArrowRightOutlined
+            <Tooltip 
               key="move-right-disabled"
-              style={{ color: '#8c8c8c', fontSize: 16, cursor: 'not-allowed' }}
-            />
+              title={!hasGitHubConnected ? "Connect GitHub to move issues" : "Cannot move further right"}
+            >
+              <ArrowRightOutlined
+                style={{ color: '#8c8c8c', fontSize: 16, cursor: 'not-allowed' }}
+              />
+            </Tooltip>
           ),
           issue.timerActive ? (
             <div key="timer-controls" style={{ display: 'flex', justifyContent: 'center', gap: 12 }}>

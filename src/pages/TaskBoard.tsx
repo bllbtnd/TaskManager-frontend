@@ -489,6 +489,7 @@ const TaskBoard: React.FC = () => {
                               );
                             }}
                             statusColumns={statusColumns}
+                            currentUser={currentUser}
                           />
                         ))}
                       </>

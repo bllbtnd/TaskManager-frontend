@@ -20,6 +20,7 @@ export interface Task {
   pausedAt?: string;
   sessionActiveWorkMs?: number;
   timerActive?: boolean;
+  linkedGitHubIssueId?: string;
 }
 
 export interface TaskRequest {

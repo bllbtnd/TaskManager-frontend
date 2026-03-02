@@ -62,28 +62,40 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete, projectId, 
   const currentColumnIndex = statusColumns.findIndex(col => col.status === task.status);
   const canMoveLeft = currentColumnIndex > 0;
   const canMoveRight = currentColumnIndex < statusColumns.length - 1;
+  const hasGitHubConnected = !!currentUser?.githubUsername;
+  const isGitHubLinkedTask = !!task.linkedGitHubIssueId;
 
   const handleMoveLeft = async () => {
     if (!canMoveLeft || !projectId) return;
+    if (isGitHubLinkedTask && !hasGitHubConnected) {
+      notificationService.error('You must connect your GitHub account to move GitHub-linked tasks');
+      return;
+    }
     const newStatus = statusColumns[currentColumnIndex - 1].status;
     try {
       const updatedTask = await taskService.updateTaskStatus(projectId, task.id, newStatus);
       onTaskUpdate(updatedTask);
       notificationService.success(`Task moved to ${newStatus.replace(/_/g, ' ')}`);
     } catch (error) {
-      notificationService.error('Failed to move task');
+      const errorMsg = error instanceof Error ? error.message : 'Failed to move task';
+      notificationService.error(errorMsg);
     }
   };
 
   const handleMoveRight = async () => {
     if (!canMoveRight || !projectId) return;
+    if (isGitHubLinkedTask && !hasGitHubConnected) {
+      notificationService.error('You must connect your GitHub account to move GitHub-linked tasks');
+      return;
+    }
     const newStatus = statusColumns[currentColumnIndex + 1].status;
     try {
       const updatedTask = await taskService.updateTaskStatus(projectId, task.id, newStatus);
       onTaskUpdate(updatedTask);
       notificationService.success(`Task moved to ${newStatus.replace(/_/g, ' ')}`);
     } catch (error) {
-      notificationService.error('Failed to move task');
+      const errorMsg = error instanceof Error ? error.message : 'Failed to move task';
+      notificationService.error(errorMsg);
     }
   };
 
@@ -175,7 +187,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete, projectId, 
         }}
         hoverable={!task.timerActive}
         actions={[
-          canMoveTask && canMoveLeft ? (
+          canMoveTask && canMoveLeft && !(isGitHubLinkedTask && !hasGitHubConnected) ? (
             <Tooltip key="move-left" title="Move to previous column">
               <ArrowLeftOutlined
                 style={{ color: '#1890ff', fontSize: 16 }}
@@ -186,12 +198,16 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete, projectId, 
               />
             </Tooltip>
           ) : (
-            <ArrowLeftOutlined
+            <Tooltip 
               key="move-left-disabled"
-              style={{ color: '#8c8c8c', fontSize: 16, cursor: 'not-allowed' }}
-            />
+              title={isGitHubLinkedTask && !hasGitHubConnected ? "Connect GitHub to move this task" : "Cannot move further left"}
+            >
+              <ArrowLeftOutlined
+                style={{ color: '#8c8c8c', fontSize: 16, cursor: 'not-allowed' }}
+              />
+            </Tooltip>
           ),
-          canMoveTask && canMoveRight ? (
+          canMoveTask && canMoveRight && !(isGitHubLinkedTask && !hasGitHubConnected) ? (
             <Tooltip key="move-right" title="Move to next column">
               <ArrowRightOutlined
                 style={{ color: '#1890ff', fontSize: 16 }}
@@ -202,10 +218,14 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete, projectId, 
               />
             </Tooltip>
           ) : (
-            <ArrowRightOutlined
+            <Tooltip 
               key="move-right-disabled"
-              style={{ color: '#8c8c8c', fontSize: 16, cursor: 'not-allowed' }}
-            />
+              title={isGitHubLinkedTask && !hasGitHubConnected ? "Connect GitHub to move this task" : "Cannot move further right"}
+            >
+              <ArrowRightOutlined
+                style={{ color: '#8c8c8c', fontSize: 16, cursor: 'not-allowed' }}
+              />
+            </Tooltip>
           ),
           canControlTimer ? (
             task.timerActive ? (
