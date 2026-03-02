@@ -6,6 +6,7 @@ export interface Project {
   description: string;
   githubUrl?: string;
   ownerId: string;
+  ownerIds?: string[];
   memberIds: string[];
   createdAt: string;
   updatedAt: string;
@@ -64,6 +65,16 @@ export const projectService = {
 
   removeUser: async (projectId: string, email: string): Promise<Project> => {
     const response = await api.delete(`/projects/${projectId}/members/${email}`);
+    return response.data;
+  },
+
+  addProjectOwner: async (projectId: string, data: InviteUserRequest): Promise<Project> => {
+    const response = await api.post(`/projects/${projectId}/owners/add`, data);
+    return response.data;
+  },
+
+  removeProjectOwner: async (projectId: string, data: InviteUserRequest): Promise<Project> => {
+    const response = await api.post(`/projects/${projectId}/owners/remove`, data);
     return response.data;
   },
 };
