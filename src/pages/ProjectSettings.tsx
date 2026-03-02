@@ -26,11 +26,6 @@ const ProjectSettings: React.FC = () => {
   const [addOwnerLoading, setAddOwnerLoading] = useState(false);
   const [form] = Form.useForm();
 
-  // Function to determine if an email is an owner
-  const isEmailOwner = (email: string): boolean => {
-    return ownerEmails.includes(email);
-  };
-
   useEffect(() => {
     fetchData();
   }, [projectId]);
