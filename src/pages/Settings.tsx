@@ -132,10 +132,25 @@ const Settings: React.FC = () => {
     }
   };
 
-  const handleDeleteAccount = async (values: { password: string }) => {
+  const handleDeleteAccount = async (values: { password?: string }) => {
     setDeleteLoading(true);
     try {
-      await userService.deleteAccount({ password: values.password });
+      // Check if user has GitHub account (githubUsername exists in settings)
+      const isGitHubUser = settings?.githubUsername != null;
+      
+      if (isGitHubUser) {
+        // GitHub users don't need password
+        await userService.deleteAccount({ password: '' });
+      } else {
+        // Regular users must provide password
+        if (!values.password) {
+          message.error('Password is required');
+          setDeleteLoading(false);
+          return;
+        }
+        await userService.deleteAccount({ password: values.password });
+      }
+      
       message.success('Account deleted successfully. Redirecting...');
       deleteForm.resetFields();
       // Redirect to login after 2 seconds
@@ -153,6 +168,8 @@ const Settings: React.FC = () => {
   };
 
   const showDeleteConfirmation = () => {
+    const isGitHubUser = settings?.githubUsername != null;
+    
     Modal.confirm({
       title: 'Delete Account',
       content: (
@@ -168,14 +185,21 @@ const Settings: React.FC = () => {
             <li>All time logs and history</li>
             <li>All personal data</li>
           </ul>
-          <p>To confirm, please enter your password below:</p>
+          {!isGitHubUser && <p>To confirm, please enter your password below:</p>}
+          {isGitHubUser && <p>Click "Delete Account" to confirm deletion.</p>}
         </div>
       ),
       okText: 'Delete Account',
       okType: 'danger',
       cancelText: 'Cancel',
       onOk: () => {
-        deleteForm.submit();
+        if (isGitHubUser) {
+          // For GitHub users, delete immediately
+          handleDeleteAccount({});
+        } else {
+          // For regular users, show password form
+          deleteForm.submit();
+        }
       },
     });
   };
@@ -191,24 +215,6 @@ const Settings: React.FC = () => {
       notificationService.error('Failed to initiate GitHub connection');
       setGithubConnecting(false);
     }
-  };
-
-  const handleDisconnectGitHub = async () => {
-    Modal.confirm({
-      title: 'Disconnect GitHub',
-      content: 'Are you sure you want to disconnect your GitHub account? Your existing task-to-issue links will be preserved.',
-      okText: 'Disconnect',
-      cancelText: 'Cancel',
-      onOk: async () => {
-        try {
-          await gitHubService.disconnectGitHub();
-          setGithubUsername(null);
-          notificationService.success('GitHub account disconnected');
-        } catch (error) {
-          notificationService.error('Failed to disconnect GitHub');
-        }
-      },
-    });
   };
 
   const formatTime = (ms: number): string => {
@@ -457,65 +463,75 @@ const Settings: React.FC = () => {
                     bordered={false}
                     className="settings-card"
                   >
-                    <Form
-                      form={passwordForm}
-                      layout="vertical"
-                      onFinish={handleChangePassword}
-                    >
-                      <Form.Item
-                        name="currentPassword"
-                        label="Current Password"
-                        rules={[
-                          { required: true, message: 'Please enter your current password' },
-                        ]}
+                    {settings?.githubUsername ? (
+                      // GitHub users don't have passwords
+                      <div style={{ padding: '20px 0' }}>
+                        <Text type="secondary">
+                          Your account is authenticated via GitHub. Password management is not available for GitHub accounts.
+                        </Text>
+                      </div>
+                    ) : (
+                      // Regular users can change password
+                      <Form
+                        form={passwordForm}
+                        layout="vertical"
+                        onFinish={handleChangePassword}
                       >
-                        <Input.Password
-                          placeholder="Enter your current password"
-                          prefix={<LockOutlined />}
-                        />
-                      </Form.Item>
-
-                      <Form.Item
-                        name="newPassword"
-                        label="New Password"
-                        rules={[
-                          { required: true, message: 'Please enter a new password' },
-                          {
-                            min: 6,
-                            message: 'Password must be at least 6 characters',
-                          },
-                        ]}
-                      >
-                        <Input.Password
-                          placeholder="Enter your new password"
-                          prefix={<LockOutlined />}
-                        />
-                      </Form.Item>
-
-                      <Form.Item
-                        name="confirmPassword"
-                        label="Confirm Password"
-                        rules={[
-                          { required: true, message: 'Please confirm your new password' },
-                        ]}
-                      >
-                        <Input.Password
-                          placeholder="Confirm your new password"
-                          prefix={<LockOutlined />}
-                        />
-                      </Form.Item>
-
-                      <Form.Item>
-                        <Button
-                          type="primary"
-                          htmlType="submit"
-                          loading={passwordLoading}
-                          style={{ width: '100%' }}
+                        <Form.Item
+                          name="currentPassword"
+                          label="Current Password"
+                          rules={[
+                            { required: true, message: 'Please enter your current password' },
+                          ]}
                         >
-                          Change Password
-                        </Button>
-                      </Form.Item>
-                    </Form>
+                          <Input.Password
+                            placeholder="Enter your current password"
+                            prefix={<LockOutlined />}
+                          />
+                        </Form.Item>
+
+                        <Form.Item
+                          name="newPassword"
+                          label="New Password"
+                          rules={[
+                            { required: true, message: 'Please enter a new password' },
+                            {
+                              min: 6,
+                              message: 'Password must be at least 6 characters',
+                            },
+                          ]}
+                        >
+                          <Input.Password
+                            placeholder="Enter your new password"
+                            prefix={<LockOutlined />}
+                          />
+                        </Form.Item>
+
+                        <Form.Item
+                          name="confirmPassword"
+                          label="Confirm Password"
+                          rules={[
+                            { required: true, message: 'Please confirm your new password' },
+                          ]}
+                        >
+                          <Input.Password
+                            placeholder="Confirm your new password"
+                            prefix={<LockOutlined />}
+                          />
+                        </Form.Item>
+
+                        <Form.Item>
+                          <Button
+                            type="primary"
+                            htmlType="submit"
+                            loading={passwordLoading}
+                            style={{ width: '100%' }}
+                          >
+                            Change Password
+                          </Button>
+                        </Form.Item>
+                      </Form>
+                    )}
                   </Card>
                 </Col>
 
@@ -591,13 +607,9 @@ const Settings: React.FC = () => {
                           <Text type="secondary" style={{ display: 'block', marginBottom: 16 }}>
                             You can now create tasks that sync to GitHub issues and close them when tasks are marked as done.
                           </Text>
-                          <Button
-                            danger
-                            onClick={handleDisconnectGitHub}
-                            style={{ width: '100%' }}
-                          >
-                            Disconnect GitHub
-                          </Button>
+                          <Text type="secondary" style={{ display: 'block', marginBottom: 16, fontStyle: 'italic' }}>
+                            Note: If you signed up with GitHub, disconnecting will prevent you from logging in. To remove your account, use the Delete Account option instead.
+                          </Text>
                         </>
                       ) : (
                         <>
