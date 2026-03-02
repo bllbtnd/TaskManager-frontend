@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Form, Input, Button, Card, Typography } from 'antd';
-import { UserOutlined, LockOutlined } from '@ant-design/icons';
+import { Form, Input, Button, Card, Typography, Divider } from 'antd';
+import { UserOutlined, LockOutlined, GithubOutlined } from '@ant-design/icons';
 import { useNavigate, Link } from 'react-router-dom';
 import { authService } from '../services/authService';
 import { notificationService } from '../services/notificationService';
@@ -10,6 +10,7 @@ const { Title, Text } = Typography;
 
 const Login: React.FC = () => {
   const [loading, setLoading] = useState(false);
+  const [githubLoading, setGithubLoading] = useState(false);
   const navigate = useNavigate();
 
   const onFinish = async (values: any) => {
@@ -22,6 +23,17 @@ const Login: React.FC = () => {
       notificationService.error(error.response?.data || 'Login failed');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGitHubLogin = async () => {
+    setGithubLoading(true);
+    try {
+      const response = await authService.getGitHubOAuthUrl();
+      window.location.href = response.authUrl;
+    } catch (error) {
+      notificationService.error('Failed to initiate GitHub login');
+      setGithubLoading(false);
     }
   };
 
@@ -89,7 +101,26 @@ const Login: React.FC = () => {
             </Button>
           </Form.Item>
 
-          <div style={{ textAlign: 'center' }}>
+          <Divider style={{ margin: '24px 0' }}>
+            <Text type="secondary">or</Text>
+          </Divider>
+
+          <Button
+            icon={<GithubOutlined />}
+            onClick={handleGitHubLogin}
+            loading={githubLoading}
+            block
+            style={{ 
+              height: 45,
+              background: '#24292e',
+              borderColor: '#24292e',
+              color: '#fff'
+            }}
+          >
+            Sign in with GitHub
+          </Button>
+
+          <div style={{ textAlign: 'center', marginTop: 24 }}>
             <Text type="secondary">
               Don't have an account?{' '}
               <Link to="/register" style={{ color: '#1890ff' }}>

@@ -1,13 +1,14 @@
 import React, { useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Spin, Result, Button } from 'antd';
-import { gitHubService } from '../services/gitHubService';
+import { authService } from '../services/authService';
 import { notificationService } from '../services/notificationService';
+import { isMobileDevice } from '../utils/device';
 
 const GitHubOAuthCallback: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const [status, setStatus] = React.useState<'loading' | 'success' | 'error'>('loading');
+  const [status, setStatus] = React.useState<'loading' | 'success' | 'error' | 'pending'>('loading');
   const [errorMsg, setErrorMsg] = React.useState('');
 
   useEffect(() => {
@@ -28,19 +29,24 @@ const GitHubOAuthCallback: React.FC = () => {
       }
 
       try {
-        const result = await gitHubService.handleOAuthCallback(code);
-        notificationService.success(`GitHub account connected as ${result.githubUsername}`);
+        await authService.handleGitHubCallback(code);
+        notificationService.success('GitHub login successful!');
         setStatus('success');
-        // Redirect to settings after 2 seconds
+        // Redirect to main page after 1 second
         setTimeout(() => {
-          const redirectUrl = sessionStorage.getItem('redirectAfterOAuth');
-          sessionStorage.removeItem('redirectAfterOAuth');
-          navigate(redirectUrl || '/settings', { replace: true });
-        }, 2000);
+          navigate(isMobileDevice() ? '/mobile-summary' : '/projects', { replace: true });
+        }, 1000);
       } catch (error: any) {
-        const message = error.response?.data?.message || error.message || 'Failed to connect GitHub account';
-        setErrorMsg(message);
-        setStatus('error');
+        const message = error.response?.data?.message || error.message || 'GitHub login failed';
+        
+        // Check if account is pending approval
+        if (message.includes('pending approval')) {
+          setErrorMsg('Your account has been created and is pending admin approval. You will be notified once approved.');
+          setStatus('pending');
+        } else {
+          setErrorMsg(message);
+          setStatus('error');
+        }
       }
     };
 
@@ -50,7 +56,24 @@ const GitHubOAuthCallback: React.FC = () => {
   if (status === 'loading') {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-        <Spin size="large" tip="Connecting your GitHub account..." />
+        <Spin size="large" tip="Authenticating with GitHub..." />
+      </div>
+    );
+  }
+
+  if (status === 'pending') {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', padding: 24 }}>
+        <Result
+          status="info"
+          title="Account Pending Approval"
+          subTitle={errorMsg}
+          extra={
+            <Button type="primary" onClick={() => navigate('/login', { replace: true })}>
+              Go to Login
+            </Button>
+          }
+        />
       </div>
     );
   }
@@ -60,11 +83,11 @@ const GitHubOAuthCallback: React.FC = () => {
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', padding: 24 }}>
         <Result
           status="error"
-          title="GitHub Connection Failed"
+          title="GitHub Login Failed"
           subTitle={errorMsg}
           extra={
-            <Button type="primary" onClick={() => navigate('/settings', { replace: true })}>
-              Go Back to Settings
+            <Button type="primary" onClick={() => navigate('/login', { replace: true })}>
+              Go Back to Login
             </Button>
           }
         />
@@ -76,11 +99,11 @@ const GitHubOAuthCallback: React.FC = () => {
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
       <Result
         status="success"
-        title="GitHub Connected Successfully"
-        subTitle="Redirecting to settings..."
+        title="Login Successful!"
+        subTitle="Redirecting to your projects..."
         extra={
-          <Button type="primary" onClick={() => navigate('/settings', { replace: true })}>
-            Go to Settings
+          <Button type="primary" onClick={() => navigate('/projects', { replace: true })}>
+            Go to Projects
           </Button>
         }
       />

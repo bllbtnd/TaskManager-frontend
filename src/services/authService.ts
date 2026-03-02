@@ -52,4 +52,22 @@ export const authService = {
     const user = authService.getCurrentUser();
     return user?.role === 'GLOBAL_ADMIN';
   },
+
+  getGitHubOAuthUrl: async (): Promise<{ authUrl: string }> => {
+    const response = await api.get('/auth/github/oauth-url');
+    return response.data;
+  },
+
+  handleGitHubCallback: async (code: string): Promise<AuthResponse> => {
+    const response = await api.post('/auth/github/callback', { code });
+    const authData = response.data;
+    
+    // Store token and user data if login successful
+    if (authData.token) {
+      localStorage.setItem('token', authData.token);
+      localStorage.setItem('user', JSON.stringify(authData));
+    }
+    
+    return authData;
+  },
 };
