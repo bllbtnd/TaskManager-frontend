@@ -132,11 +132,17 @@ const GitHubIssueCard: React.FC<GitHubIssueCardProps> = ({ issue, draggableId, p
                 />
               </Tooltip>
             </div>
-          ) : (
+          ) : issue.boardStatus === 'IN_PROGRESS' ? (
             <Tooltip key="start" title="Start timer">
               <PlayCircleOutlined
                 style={{ color: '#52c41a', fontSize: 16 }}
                 onClick={(e) => { e.stopPropagation(); handleStartTimer(); }}
+              />
+            </Tooltip>
+          ) : (
+            <Tooltip key="start-disabled" title="Timer can only be started for 'In Progress' issues">
+              <PlayCircleOutlined
+                style={{ color: '#8c8c8c', fontSize: 16, cursor: 'not-allowed' }}
               />
             </Tooltip>
           ),

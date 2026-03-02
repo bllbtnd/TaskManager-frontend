@@ -176,7 +176,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete, projectId, 
                   />
                 </Tooltip>
               </div>
-            ) : (
+            ) : task.status === 'IN_PROGRESS' ? (
               <PlayCircleOutlined
                 key="play"
                 style={{ color: '#52c41a', fontSize: 16 }}
@@ -186,6 +186,13 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete, projectId, 
                 }}
                 title="Start timer"
               />
+            ) : (
+              <Tooltip title="Timer can only be started for 'In Progress' tasks">
+                <PlayCircleOutlined
+                  key="play-disabled"
+                  style={{ color: '#8c8c8c', fontSize: 16, cursor: 'not-allowed' }}
+                />
+              </Tooltip>
             )
           ) : (
             <Tooltip title="Only assigned users or project owner can control timer">
