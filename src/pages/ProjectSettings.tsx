@@ -182,11 +182,10 @@ const ProjectSettings: React.FC = () => {
             </Form.Item>
 
             <Form.Item
-              label="Description"
+              label="Description (Optional)"
               name="description"
-              rules={[{ required: true, message: 'Please enter description' }]}
             >
-              <TextArea rows={4} placeholder="Enter project description" />
+              <TextArea rows={4} placeholder="Enter project description (optional)" />
             </Form.Item>
 
             <Form.Item
