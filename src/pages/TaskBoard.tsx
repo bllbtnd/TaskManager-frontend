@@ -603,9 +603,17 @@ const TaskBoard: React.FC = () => {
             />
           </Form.Item>
 
-          {!editingTask && project?.githubUrl && (
+          {!editingTask && project?.githubUrl && currentUser?.githubUsername && (
             <Form.Item name="createAsGitHubIssue" valuePropName="checked">
               <Checkbox>Create as GitHub Issue</Checkbox>
+            </Form.Item>
+          )}
+
+          {!editingTask && project?.githubUrl && !currentUser?.githubUsername && (
+            <Form.Item>
+              <div style={{ color: '#ffb92c', fontSize: '12px' }}>
+                Connect your GitHub account to create issues
+              </div>
             </Form.Item>
           )}
 

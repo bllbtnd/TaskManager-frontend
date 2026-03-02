@@ -25,6 +25,8 @@ export interface UserProfile {
   lastName: string;
   role: string;
   status: string;
+  githubUsername?: string;
+  hasPassword?: boolean;
 }
 
 export interface UserSettings {
