@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Button, Form, Input, Card, Spin, Space, List, Popconfirm, Modal, Typography } from 'antd';
-import { ArrowLeftOutlined, UserAddOutlined, DeleteOutlined, SaveOutlined, UserDeleteOutlined } from '@ant-design/icons';
+import { Button, Form, Input, Card, Spin, Space, List, Popconfirm, Modal, Typography, Tag } from 'antd';
+import { ArrowLeftOutlined, UserAddOutlined, DeleteOutlined, SaveOutlined, UserDeleteOutlined, CrownOutlined } from '@ant-design/icons';
 import { notificationService } from '../services/notificationService';
 import { projectService } from '../services/projectService';
 import type { Project, ProjectRequest } from '../services/projectService';
@@ -19,9 +19,17 @@ const ProjectSettings: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [memberEmails, setMemberEmails] = useState<string[]>([]);
+  const [ownerEmails, setOwnerEmails] = useState<string[]>([]);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteLoading, setInviteLoading] = useState(false);
+  const [addOwnerEmail, setAddOwnerEmail] = useState('');
+  const [addOwnerLoading, setAddOwnerLoading] = useState(false);
   const [form] = Form.useForm();
+
+  // Function to determine if an email is an owner
+  const isEmailOwner = (email: string): boolean => {
+    return ownerEmails.includes(email);
+  };
 
   useEffect(() => {
     fetchData();
@@ -40,6 +48,15 @@ const ProjectSettings: React.FC = () => {
       setProject(projectData);
       setCurrentUser(profile);
       setMemberEmails(members);
+      
+      // Get owner emails from the API
+      try {
+        const owners = await projectService.getProjectOwners(projectId);
+        setOwnerEmails(owners);
+      } catch (error) {
+        // Fallback: assume first email is owner
+        setOwnerEmails(members.slice(0, 1));
+      }
 
       // Check if current user is the owner
       if (profile.id !== projectData.ownerId) {
@@ -102,6 +119,38 @@ const ProjectSettings: React.FC = () => {
       await fetchData();
     } catch (error) {
       notificationService.error('Failed to remove user');
+    }
+  };
+
+  const handleAddOwner = async () => {
+    if (!projectId || !addOwnerEmail.trim()) {
+      notificationService.error('Please enter an email');
+      return;
+    }
+
+    setAddOwnerLoading(true);
+    try {
+      await projectService.addProjectOwner(projectId, { email: addOwnerEmail.trim() });
+      notificationService.success('User promoted to owner successfully');
+      setAddOwnerEmail('');
+      await fetchData();
+    } catch (error: any) {
+      const errorMsg = error?.response?.data || 'Failed to add owner';
+      notificationService.error(errorMsg);
+    } finally {
+      setAddOwnerLoading(false);
+    }
+  };
+
+  const handleRemoveOwner = async (email: string) => {
+    if (!projectId) return;
+    try {
+      await projectService.removeProjectOwner(projectId, { email });
+      notificationService.success('Owner demoted successfully');
+      await fetchData();
+    } catch (error: any) {
+      const errorMsg = error?.response?.data || 'Failed to remove owner';
+      notificationService.error(errorMsg);
     }
   };
 
@@ -201,6 +250,90 @@ const ProjectSettings: React.FC = () => {
               </Button>
             </Form.Item>
           </Form>
+        </Card>
+
+        {/* Owners Management */}
+        <Card title="Project Owners" style={{ background: '#1f1f1f', border: '1px solid #303030' }}>
+          <div style={{ marginBottom: 24 }}>
+            <Text strong style={{ display: 'block', marginBottom: 8 }}>Add New Owner</Text>
+            <Space.Compact style={{ width: '100%', maxWidth: 400 }}>
+              <Input
+                placeholder="Enter user email to make owner"
+                value={addOwnerEmail}
+                onChange={(e) => setAddOwnerEmail(e.target.value)}
+                onPressEnter={handleAddOwner}
+              />
+              <Button
+                type="primary"
+                icon={<UserAddOutlined />}
+                loading={addOwnerLoading}
+                onClick={handleAddOwner}
+              >
+                Add Owner
+              </Button>
+            </Space.Compact>
+          </div>
+
+          <div>
+            <Text strong style={{ display: 'block', marginBottom: 12 }}>
+              Current Owners ({ownerEmails.length})
+            </Text>
+            <List
+              dataSource={ownerEmails}
+              renderItem={(email) => {
+                const isCurrentUser = currentUser?.email === email;
+                const isLastOwner = ownerEmails.length === 1;
+
+                return (
+                  <List.Item
+                    style={{
+                      background: '#262626',
+                      marginBottom: 8,
+                      padding: '12px 16px',
+                      borderRadius: 6,
+                      border: '1px solid #303030',
+                    }}
+                    actions={[
+                      !isLastOwner && !isCurrentUser && (
+                        <Popconfirm
+                          title="Demote owner"
+                          description="Are you sure you want to demote this owner to member?"
+                          onConfirm={() => handleRemoveOwner(email)}
+                          okText="Demote"
+                          cancelText="Cancel"
+                          okButtonProps={{ danger: true }}
+                        >
+                          <Button
+                            type="text"
+                            danger
+                            icon={<UserDeleteOutlined />}
+                            size="small"
+                          >
+                            Remove Owner
+                          </Button>
+                        </Popconfirm>
+                      ),
+                    ].filter(Boolean)}
+                  >
+                    <List.Item.Meta
+                      avatar={<CrownOutlined style={{ color: '#faad14', fontSize: 16 }} />}
+                      title={
+                        <Space>
+                          <Text>{email}</Text>
+                          {isCurrentUser && (
+                            <Tag color="blue">You</Tag>
+                          )}
+                          {isLastOwner && (
+                            <Tag>Last Owner</Tag>
+                          )}
+                        </Space>
+                      }
+                    />
+                  </List.Item>
+                );
+              }}
+            />
+          </div>
         </Card>
 
         {/* Team Management */}

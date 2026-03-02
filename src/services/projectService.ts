@@ -77,4 +77,9 @@ export const projectService = {
     const response = await api.post(`/projects/${projectId}/owners/remove`, data);
     return response.data;
   },
+
+  getProjectOwners: async (projectId: string): Promise<string[]> => {
+    const response = await api.get(`/projects/${projectId}/owners`);
+    return response.data;
+  },
 };
