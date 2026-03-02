@@ -25,10 +25,11 @@ import {
   SaveOutlined,
   CloseOutlined,
   DeleteOutlined,
-  GithubOutlined
+  GithubOutlined,
+  BellOutlined
 } from '@ant-design/icons';
 import { userService } from '../services/userService';
-import type { UserSettings, UpdateProfileRequest } from '../services/userService';
+import type { UserSettings, UpdateProfileRequest, EmailPreferences } from '../services/userService';
 import { gitHubService } from '../services/gitHubService';
 import { useNavigate } from 'react-router-dom';
 import { notificationService } from '../services/notificationService';
@@ -49,6 +50,8 @@ const Settings: React.FC = () => {
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [githubUsername, setGithubUsername] = useState<string | null>(null);
   const [githubConnecting, setGithubConnecting] = useState(false);
+  const [emailPreferences, setEmailPreferences] = useState<EmailPreferences | null>(null);
+  const [preferencesLoading, setPreferencesLoading] = useState(false);
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -67,6 +70,15 @@ const Settings: React.FC = () => {
           lastName: data.lastName,
           email: data.email,
         });
+        
+                // Load email preferences
+                try {
+                  const preferences = await userService.getEmailPreferences();
+                  setEmailPreferences(preferences);
+                } catch (prefErr) {
+                  console.error('Error loading email preferences:', prefErr);
+                }
+        
         setLoading(false);
       } catch (err: any) {
         console.error('Error loading settings:', err);
@@ -622,6 +634,310 @@ const Settings: React.FC = () => {
                         <li>GitHub issue state changes are reflected in your tasks</li>
                       </ul>
                       <p><strong>Permissions:</strong> Ensure your GitHub account has write access to the repository.</p>
+                    </div>
+                  </Card>
+                </Col>
+              </Row>
+            ),
+          },
+          {
+            key: 'notifications',
+            label: <Space><BellOutlined />Email Notifications</Space>,
+            children: (
+              <Row gutter={[24, 24]}>
+                <Col xs={24} lg={16}>
+                  <Card
+                    title="Email Notification Preferences"
+                    bordered={false}
+                    className="settings-card"
+                  >
+                    {emailPreferences ? (
+                      <Spin spinning={preferencesLoading}>
+                      <Form layout="vertical">
+                        <Divider>Important Notifications</Divider>
+                        <Text type="secondary" style={{ display: 'block', marginBottom: 16 }}>
+                          These emails keep you informed about key project activities
+                        </Text>
+                        
+                        <Space direction="vertical" style={{ width: '100%' }} size="middle">
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div>
+                              <div><strong>Project Invitations</strong></div>
+                              <Text type="secondary">Receive emails when you're invited to a project</Text>
+                            </div>
+                            <Button
+                              type={emailPreferences.projectInvitations ? 'primary' : 'default'}
+                              onClick={async () => {
+                                setPreferencesLoading(true);
+                                try {
+                                  const updated = await userService.updateEmailPreferences({
+                                    ...emailPreferences,
+                                    projectInvitations: !emailPreferences.projectInvitations
+                                  });
+                                  setEmailPreferences(updated);
+                                  message.success('Preferences updated');
+                                } catch (err) {
+                                  message.error('Failed to update preferences');
+                                } finally {
+                                  setPreferencesLoading(false);
+                                }
+                              }}
+                            >
+                              {emailPreferences.projectInvitations ? 'Enabled' : 'Disabled'}
+                            </Button>
+                          </div>
+
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div>
+                              <div><strong>Task Assignments</strong></div>
+                              <Text type="secondary">Receive emails when assigned to a task</Text>
+                            </div>
+                            <Button
+                              type={emailPreferences.taskAssignments ? 'primary' : 'default'}
+                              onClick={async () => {
+                                setPreferencesLoading(true);
+                                try {
+                                  const updated = await userService.updateEmailPreferences({
+                                    ...emailPreferences,
+                                    taskAssignments: !emailPreferences.taskAssignments
+                                  });
+                                  setEmailPreferences(updated);
+                                  message.success('Preferences updated');
+                                } catch (err) {
+                                  message.error('Failed to update preferences');
+                                } finally {
+                                  setPreferencesLoading(false);
+                                }
+                              }}
+                            >
+                              {emailPreferences.taskAssignments ? 'Enabled' : 'Disabled'}
+                            </Button>
+                          </div>
+
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div>
+                              <div><strong>Project Deletion</strong></div>
+                              <Text type="secondary">Receive emails when a project you're in gets deleted</Text>
+                            </div>
+                            <Button
+                              type={emailPreferences.projectDeletion ? 'primary' : 'default'}
+                              onClick={async () => {
+                                setPreferencesLoading(true);
+                                try {
+                                  const updated = await userService.updateEmailPreferences({
+                                    ...emailPreferences,
+                                    projectDeletion: !emailPreferences.projectDeletion
+                                  });
+                                  setEmailPreferences(updated);
+                                  message.success('Preferences updated');
+                                } catch (err) {
+                                  message.error('Failed to update preferences');
+                                } finally {
+                                  setPreferencesLoading(false);
+                                }
+                              }}
+                            >
+                              {emailPreferences.projectDeletion ? 'Enabled' : 'Disabled'}
+                            </Button>
+                          </div>
+
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div>
+                              <div><strong>Task Deadline Reminders</strong></div>
+                              <Text type="secondary">Receive reminders when task deadlines approach</Text>
+                            </div>
+                            <Button
+                              type={emailPreferences.taskDeadlineReminders ? 'primary' : 'default'}
+                              onClick={async () => {
+                                setPreferencesLoading(true);
+                                try {
+                                  const updated = await userService.updateEmailPreferences({
+                                    ...emailPreferences,
+                                    taskDeadlineReminders: !emailPreferences.taskDeadlineReminders
+                                  });
+                                  setEmailPreferences(updated);
+                                  message.success('Preferences updated');
+                                } catch (err) {
+                                  message.error('Failed to update preferences');
+                                } finally {
+                                  setPreferencesLoading(false);
+                                }
+                              }}
+                            >
+                              {emailPreferences.taskDeadlineReminders ? 'Enabled' : 'Disabled'}
+                            </Button>
+                          </div>
+
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div>
+                              <div><strong>Project Removal</strong></div>
+                              <Text type="secondary">Receive emails when removed from a project</Text>
+                            </div>
+                            <Button
+                              type={emailPreferences.projectRemoval ? 'primary' : 'default'}
+                              onClick={async () => {
+                                setPreferencesLoading(true);
+                                try {
+                                  const updated = await userService.updateEmailPreferences({
+                                    ...emailPreferences,
+                                    projectRemoval: !emailPreferences.projectRemoval
+                                  });
+                                  setEmailPreferences(updated);
+                                  message.success('Preferences updated');
+                                } catch (err) {
+                                  message.error('Failed to update preferences');
+                                } finally {
+                                  setPreferencesLoading(false);
+                                }
+                              }}
+                            >
+                              {emailPreferences.projectRemoval ? 'Enabled' : 'Disabled'}
+                            </Button>
+                          </div>
+                        </Space>
+
+                        <Divider style={{ marginTop: 24 }}>Activity Updates</Divider>
+                        <Text type="secondary" style={{ display: 'block', marginBottom: 16 }}>
+                          These emails keep you updated on task and project activity
+                        </Text>
+
+                        <Space direction="vertical" style={{ width: '100%' }} size="middle">
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div>
+                              <div><strong>Task Status Changes</strong></div>
+                              <Text type="secondary">Receive emails when task status changes</Text>
+                            </div>
+                            <Button
+                              type={emailPreferences.taskStatusChanges ? 'primary' : 'default'}
+                              onClick={async () => {
+                                setPreferencesLoading(true);
+                                try {
+                                  const updated = await userService.updateEmailPreferences({
+                                    ...emailPreferences,
+                                    taskStatusChanges: !emailPreferences.taskStatusChanges
+                                  });
+                                  setEmailPreferences(updated);
+                                  message.success('Preferences updated');
+                                } catch (err) {
+                                  message.error('Failed to update preferences');
+                                } finally {
+                                  setPreferencesLoading(false);
+                                }
+                              }}
+                            >
+                              {emailPreferences.taskStatusChanges ? 'Enabled' : 'Disabled'}
+                            </Button>
+                          </div>
+
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div>
+                              <div><strong>Task Completion</strong></div>
+                              <Text type="secondary">Receive emails when tasks are completed</Text>
+                            </div>
+                            <Button
+                              type={emailPreferences.taskCompletion ? 'primary' : 'default'}
+                              onClick={async () => {
+                                setPreferencesLoading(true);
+                                try {
+                                  const updated = await userService.updateEmailPreferences({
+                                    ...emailPreferences,
+                                    taskCompletion: !emailPreferences.taskCompletion
+                                  });
+                                  setEmailPreferences(updated);
+                                  message.success('Preferences updated');
+                                } catch (err) {
+                                  message.error('Failed to update preferences');
+                                } finally {
+                                  setPreferencesLoading(false);
+                                }
+                              }}
+                            >
+                              {emailPreferences.taskCompletion ? 'Enabled' : 'Disabled'}
+                            </Button>
+                          </div>
+                        </Space>
+
+                        <Divider style={{ marginTop: 24 }}>Digest Emails</Divider>
+                        <Text type="secondary" style={{ display: 'block', marginBottom: 16 }}>
+                          Periodic summaries of your tasks and projects
+                        </Text>
+
+                        <Space direction="vertical" style={{ width: '100%' }} size="middle">
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div>
+                              <div><strong>Weekly Summary</strong></div>
+                              <Text type="secondary">Receive a weekly summary of your activity</Text>
+                            </div>
+                            <Button
+                              type={emailPreferences.weeklySummary ? 'primary' : 'default'}
+                              onClick={async () => {
+                                setPreferencesLoading(true);
+                                try {
+                                  const updated = await userService.updateEmailPreferences({
+                                    ...emailPreferences,
+                                    weeklySummary: !emailPreferences.weeklySummary
+                                  });
+                                  setEmailPreferences(updated);
+                                  message.success('Preferences updated');
+                                } catch (err) {
+                                  message.error('Failed to update preferences');
+                                } finally {
+                                  setPreferencesLoading(false);
+                                }
+                              }}
+                            >
+                              {emailPreferences.weeklySummary ? 'Enabled' : 'Disabled'}
+                            </Button>
+                          </div>
+
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div>
+                              <div><strong>Daily Digest</strong></div>
+                              <Text type="secondary">Receive a daily digest of activity</Text>
+                            </div>
+                            <Button
+                              type={emailPreferences.dailyDigest ? 'primary' : 'default'}
+                              onClick={async () => {
+                                setPreferencesLoading(true);
+                                try {
+                                  const updated = await userService.updateEmailPreferences({
+                                    ...emailPreferences,
+                                    dailyDigest: !emailPreferences.dailyDigest
+                                  });
+                                  setEmailPreferences(updated);
+                                  message.success('Preferences updated');
+                                } catch (err) {
+                                  message.error('Failed to update preferences');
+                                } finally {
+                                  setPreferencesLoading(false);
+                                }
+                              }}
+                            >
+                              {emailPreferences.dailyDigest ? 'Enabled' : 'Disabled'}
+                            </Button>
+                          </div>
+                        </Space>
+                      </Form>
+                      </Spin>
+                    ) : (
+                      <Spin />
+                    )}
+                  </Card>
+                </Col>
+
+                <Col xs={24} lg={8}>
+                  <Card
+                    title="About Email Notifications"
+                    bordered={false}
+                    className="settings-card"
+                  >
+                    <div style={{ color: '#8c8c8c' }}>
+                      <p><strong>Stay Informed:</strong> Email notifications help you stay up-to-date with your projects.</p>
+                      <p><strong>Control Your Inbox:</strong> Enable only the notifications you need.</p>
+                      <p><strong>Unsubscribe Anytime:</strong> Each email includes an unsubscribe link for that notification type.</p>
+                      <p style={{ marginTop: 16 }}>
+                        <Text type="warning">Note: Welcome emails cannot be disabled.</Text>
+                      </p>
                     </div>
                   </Card>
                 </Col>

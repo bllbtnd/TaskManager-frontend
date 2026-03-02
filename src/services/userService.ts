@@ -58,6 +58,18 @@ export interface DeleteAccountRequest {
   password: string;
 }
 
+export interface EmailPreferences {
+  projectInvitations: boolean;
+  taskAssignments: boolean;
+  projectDeletion: boolean;
+  taskStatusChanges: boolean;
+  taskCompletion: boolean;
+  taskDeadlineReminders: boolean;
+  projectRemoval: boolean;
+  weeklySummary: boolean;
+  dailyDigest: boolean;
+}
+
 export interface UserProjectDetail {
   id: string;
   name: string;
@@ -134,6 +146,16 @@ export const userService = {
 
   getUserProjects: async (userId: string): Promise<UserProjectDetail[]> => {
     const response = await api.get(`/admin/users/${userId}/projects`);
+    return response.data;
+  },
+
+  getEmailPreferences: async (): Promise<EmailPreferences> => {
+    const response = await api.get('/users/email-preferences');
+    return response.data;
+  },
+
+  updateEmailPreferences: async (preferences: EmailPreferences): Promise<EmailPreferences> => {
+    const response = await api.put('/users/email-preferences', preferences);
     return response.data;
   },
 };
