@@ -19,9 +19,10 @@ interface TaskCardProps {
   currentUser: UserProfile | null;
   project: Project | null;
   statusColumns?: { status: TaskStatus; title: string; color: string }[];
+  memberDetails?: Map<string, { firstName: string; lastName: string }>;
 }
 
-const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete, projectId, onTaskUpdate, currentUser, project, statusColumns = [] }) => {
+const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete, projectId, onTaskUpdate, currentUser, project, statusColumns = [], memberDetails = new Map() }) => {
   const {
     attributes,
     listeners,
@@ -314,13 +315,28 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete, projectId, 
         )}
         {task.assignedToEmails && task.assignedToEmails.length > 0 && (
           <div style={{ marginBottom: 8, display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-            {task.assignedToEmails.map((email) => (
-              <Tooltip key={email} title={email}>
-                <Tag icon={<UserOutlined />} style={{ fontSize: 11 }}>
-                  {email.split('@')[0]}
-                </Tag>
-              </Tooltip>
-            ))}
+            {task.assignedToEmails.map((email) => {
+              const details = memberDetails.get(email);
+              let displayName = email.split('@')[0];
+              
+              if (details) {
+                if (details.firstName && details.lastName) {
+                  displayName = `${details.firstName} ${details.lastName}`;
+                } else if (details.firstName) {
+                  displayName = details.firstName;
+                } else if (details.lastName) {
+                  displayName = details.lastName;
+                }
+              }
+              
+              return (
+                <Tooltip key={email} title={email}>
+                  <Tag icon={<UserOutlined />} style={{ fontSize: 11 }}>
+                    {displayName}
+                  </Tag>
+                </Tooltip>
+              );
+            })}
           </div>
         )}
         {task.deadline && (

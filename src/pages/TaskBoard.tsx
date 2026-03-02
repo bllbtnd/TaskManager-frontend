@@ -39,6 +39,7 @@ const TaskBoard: React.FC = () => {
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [memberEmails, setMemberEmails] = useState<string[]>([]);
+  const [memberDetails, setMemberDetails] = useState<Map<string, { firstName: string; lastName: string }>>(new Map());
   const [githubIssues, setGithubIssues] = useState<GitHubIssue[]>([]);
   const [syncing, setSyncing] = useState(false);
   const [form] = Form.useForm();
@@ -61,16 +62,28 @@ const TaskBoard: React.FC = () => {
     if (!projectId) return;
     setLoading(true);
     try {
-      const [projectData, tasksData, profile, members] = await Promise.all([
+      const [projectData, tasksData, profile, members, details] = await Promise.all([
         projectService.getProject(projectId),
         taskService.getProjectTasks(projectId),
         userService.getCurrentUserProfile(),
         projectService.getProjectMembers(projectId),
+        projectService.getProjectMembersDetails(projectId),
       ]);
       setProject(projectData);
       setTasks(tasksData);
       setCurrentUser(profile);
       setMemberEmails(members);
+      
+      // Create a map of email -> {firstName, lastName} for quick lookup
+      const detailsMap = new Map<string, { firstName: string; lastName: string }>();
+      details.forEach((member: any) => {
+        detailsMap.set(member.email, {
+          firstName: member.firstName || '',
+          lastName: member.lastName || '',
+        });
+      });
+      setMemberDetails(detailsMap);
+      
       if (projectData.githubUrl) {
         const issues = await gitHubService.getGitHubIssues(projectId);
         setGithubIssues(issues);
@@ -475,6 +488,7 @@ const TaskBoard: React.FC = () => {
                               );
                             }}
                             statusColumns={statusColumns}
+                            memberDetails={memberDetails}
                           />
                         ))}
                         {columnIssues.map((issue) => (
