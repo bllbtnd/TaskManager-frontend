@@ -277,38 +277,6 @@ const TaskBoard: React.FC = () => {
     setModalVisible(true);
   };
 
-  const handleMoveTasksBetweenColumns = async (fromStatus: TaskStatus, toStatus: TaskStatus) => {
-    if (!projectId) return;
-    
-    const tasksToMove = tasks.filter(t => t.status === fromStatus);
-    if (tasksToMove.length === 0) {
-      notificationService.info('No tasks to move');
-      return;
-    }
-
-    try {
-      // Optimistically update the UI
-      setTasks((prev) =>
-        prev.map((t) => (t.status === fromStatus ? { ...t, status: toStatus } : t))
-      );
-
-      // Update all tasks in the backend
-      await Promise.all(
-        tasksToMove.map((task) =>
-          taskService.updateTaskStatus(projectId, task.id, toStatus)
-        )
-      );
-
-      notificationService.success(`${tasksToMove.length} task(s) moved to ${toStatus.replace(/_/g, ' ')}`);
-    } catch (error) {
-      // Revert on error
-      setTasks((prev) =>
-        prev.map((t) => (t.status === toStatus && tasksToMove.some(tm => tm.id === t.id) ? { ...t, status: fromStatus } : t))
-      );
-      notificationService.error('Failed to move tasks');
-    }
-  };
-
   const activeTask = tasks.find((task) => task.id === activeId);
   const activeGhIssue = activeId?.startsWith('gh-')
     ? githubIssues.find((i) => `gh-${i.id}` === activeId)
@@ -466,24 +434,11 @@ const TaskBoard: React.FC = () => {
 
       <DndContext sensors={sensors} collisionDetection={closestCorners} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
-          {statusColumns.map((column, columnIndex) => {
+          {statusColumns.map((column) => {
             const columnTasks = getTasksByStatus(column.status);
             const columnIssues = getGitHubIssuesByStatus(column.status);
-            const canMoveLeft = columnIndex > 0;
-            const canMoveRight = columnIndex < statusColumns.length - 1;
-            
             return (
-              <DropZone 
-                key={column.status} 
-                status={column.status} 
-                title={column.title} 
-                color={column.color} 
-                count={columnTasks.length + columnIssues.length}
-                canMoveLeft={canMoveLeft}
-                canMoveRight={canMoveRight}
-                onMoveLeft={() => canMoveLeft && handleMoveTasksBetweenColumns(column.status, statusColumns[columnIndex - 1].status)}
-                onMoveRight={() => canMoveRight && handleMoveTasksBetweenColumns(column.status, statusColumns[columnIndex + 1].status)}
-              >
+              <DropZone key={column.status} status={column.status} title={column.title} color={column.color} count={columnTasks.length + columnIssues.length}>
                 <SortableContext
                   items={[
                     ...columnTasks.map((t) => t.id),
@@ -519,6 +474,7 @@ const TaskBoard: React.FC = () => {
                                 prev.map((t) => (t.id === updatedTask.id ? updatedTask : t))
                               );
                             }}
+                            statusColumns={statusColumns}
                           />
                         ))}
                         {columnIssues.map((issue) => (
@@ -532,6 +488,7 @@ const TaskBoard: React.FC = () => {
                                 prev.map((i) => (i.id === updatedIssue.id ? updatedIssue : i))
                               );
                             }}
+                            statusColumns={statusColumns}
                           />
                         ))}
                       </>

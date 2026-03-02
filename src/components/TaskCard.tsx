@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { Card, Tag, Tooltip } from 'antd';
-import { EditOutlined, DeleteOutlined, PlayCircleOutlined, StopOutlined, PauseOutlined, CalendarOutlined, UserOutlined } from '@ant-design/icons';
+import { EditOutlined, DeleteOutlined, PlayCircleOutlined, StopOutlined, PauseOutlined, CalendarOutlined, UserOutlined, ArrowLeftOutlined, ArrowRightOutlined } from '@ant-design/icons';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import type { Task } from '../services/taskService';
+import type { Task, TaskStatus } from '../services/taskService';
 import { taskService } from '../services/taskService';
 import { notificationService } from '../services/notificationService';
 import { useTaskTimer } from '../hooks/useTaskTimer';
@@ -18,9 +18,10 @@ interface TaskCardProps {
   onTaskUpdate: (updatedTask: Task) => void;
   currentUser: UserProfile | null;
   project: Project | null;
+  statusColumns?: { status: TaskStatus; title: string; color: string }[];
 }
 
-const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete, projectId, onTaskUpdate, currentUser, project }) => {
+const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete, projectId, onTaskUpdate, currentUser, project, statusColumns = [] }) => {
   const {
     attributes,
     listeners,
@@ -50,6 +51,41 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete, projectId, 
     project.ownerId === currentUser.id ||
     (task.assignedToEmails && task.assignedToEmails.includes(currentUser.email))
   );
+
+  // Check if current user can move task (owner or assigned)
+  const canMoveTask = currentUser && project && (
+    project.ownerId === currentUser.id ||
+    (task.assignedToEmails && task.assignedToEmails.includes(currentUser.email))
+  );
+
+  // Get current column index
+  const currentColumnIndex = statusColumns.findIndex(col => col.status === task.status);
+  const canMoveLeft = currentColumnIndex > 0;
+  const canMoveRight = currentColumnIndex < statusColumns.length - 1;
+
+  const handleMoveLeft = async () => {
+    if (!canMoveLeft || !projectId) return;
+    const newStatus = statusColumns[currentColumnIndex - 1].status;
+    try {
+      const updatedTask = await taskService.updateTaskStatus(projectId, task.id, newStatus);
+      onTaskUpdate(updatedTask);
+      notificationService.success(`Task moved to ${newStatus.replace(/_/g, ' ')}`);
+    } catch (error) {
+      notificationService.error('Failed to move task');
+    }
+  };
+
+  const handleMoveRight = async () => {
+    if (!canMoveRight || !projectId) return;
+    const newStatus = statusColumns[currentColumnIndex + 1].status;
+    try {
+      const updatedTask = await taskService.updateTaskStatus(projectId, task.id, newStatus);
+      onTaskUpdate(updatedTask);
+      notificationService.success(`Task moved to ${newStatus.replace(/_/g, ' ')}`);
+    } catch (error) {
+      notificationService.error('Failed to move task');
+    }
+  };
 
   const handleStartTimer = async () => {
     setIsToggling(true);
@@ -139,6 +175,38 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete, projectId, 
         }}
         hoverable={!task.timerActive}
         actions={[
+          canMoveTask && canMoveLeft ? (
+            <Tooltip key="move-left" title="Move to previous column">
+              <ArrowLeftOutlined
+                style={{ color: '#1890ff', fontSize: 16 }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleMoveLeft();
+                }}
+              />
+            </Tooltip>
+          ) : (
+            <ArrowLeftOutlined
+              key="move-left-disabled"
+              style={{ color: '#8c8c8c', fontSize: 16, cursor: 'not-allowed' }}
+            />
+          ),
+          canMoveTask && canMoveRight ? (
+            <Tooltip key="move-right" title="Move to next column">
+              <ArrowRightOutlined
+                style={{ color: '#1890ff', fontSize: 16 }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleMoveRight();
+                }}
+              />
+            </Tooltip>
+          ) : (
+            <ArrowRightOutlined
+              key="move-right-disabled"
+              style={{ color: '#8c8c8c', fontSize: 16, cursor: 'not-allowed' }}
+            />
+          ),
           canControlTimer ? (
             task.timerActive ? (
               <div style={{ display: 'flex', justifyContent: 'center', gap: 12 }}>

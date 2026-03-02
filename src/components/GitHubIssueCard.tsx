@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { Card, Tag, Space, Tooltip, Modal, Form, Input, Button } from 'antd';
-import { GithubOutlined, PlayCircleOutlined, PauseOutlined, StopOutlined, EditOutlined } from '@ant-design/icons';
+import { GithubOutlined, PlayCircleOutlined, PauseOutlined, StopOutlined, EditOutlined, ArrowLeftOutlined, ArrowRightOutlined } from '@ant-design/icons';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import type { GitHubIssue } from '../services/gitHubService';
+import type { GitHubIssue, TaskStatus } from '../services/gitHubService';
 import { gitHubService } from '../services/gitHubService';
 import { notificationService } from '../services/notificationService';
 import { useTaskTimer } from '../hooks/useTaskTimer';
@@ -13,9 +13,10 @@ interface GitHubIssueCardProps {
   draggableId: string;
   projectId: string;
   onIssueUpdate: (updatedIssue: GitHubIssue) => void;
+  statusColumns?: { status: TaskStatus; title: string; color: string }[];
 }
 
-const GitHubIssueCard: React.FC<GitHubIssueCardProps> = ({ issue, draggableId, projectId, onIssueUpdate }) => {
+const GitHubIssueCard: React.FC<GitHubIssueCardProps> = ({ issue, draggableId, projectId, onIssueUpdate, statusColumns = [] }) => {
   const {
     attributes,
     listeners,
@@ -38,6 +39,38 @@ const GitHubIssueCard: React.FC<GitHubIssueCardProps> = ({ issue, draggableId, p
   const [_isToggling, setIsToggling] = useState(false);
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [form] = Form.useForm();
+
+  // Get current column index
+  const currentStatus = issue.boardStatus || 'TO_DO';
+  const currentColumnIndex = statusColumns.findIndex(col => col.status === currentStatus);
+  const canMoveLeft = currentColumnIndex > 0;
+  const canMoveRight = currentColumnIndex < statusColumns.length - 1;
+
+  const handleMoveLeft = async () => {
+    if (!canMoveLeft) return;
+    const newStatus = statusColumns[currentColumnIndex - 1].status;
+    const targetState: 'open' | 'closed' = newStatus === 'DONE' ? 'closed' : 'open';
+    try {
+      const updated = await gitHubService.updateGitHubIssueStatus(projectId, issue.id, targetState, newStatus);
+      onIssueUpdate({ ...issue, gitHubState: targetState, boardStatus: newStatus });
+      notificationService.success(`Issue moved to ${newStatus.replace(/_/g, ' ')}`);
+    } catch (error) {
+      notificationService.error('Failed to move issue');
+    }
+  };
+
+  const handleMoveRight = async () => {
+    if (!canMoveRight) return;
+    const newStatus = statusColumns[currentColumnIndex + 1].status;
+    const targetState: 'open' | 'closed' = newStatus === 'DONE' ? 'closed' : 'open';
+    try {
+      const updated = await gitHubService.updateGitHubIssueStatus(projectId, issue.id, targetState, newStatus);
+      onIssueUpdate({ ...issue, gitHubState: targetState, boardStatus: newStatus });
+      notificationService.success(`Issue moved to ${newStatus.replace(/_/g, ' ')}`);
+    } catch (error) {
+      notificationService.error('Failed to move issue');
+    }
+  };
 
   const handleEditClick = () => {
     form.setFieldsValue({
@@ -142,6 +175,32 @@ const GitHubIssueCard: React.FC<GitHubIssueCardProps> = ({ issue, draggableId, p
         }}
         hoverable={!issue.timerActive}
         actions={[
+          canMoveLeft ? (
+            <Tooltip key="move-left" title="Move to previous column">
+              <ArrowLeftOutlined
+                style={{ color: '#1890ff', fontSize: 16 }}
+                onClick={(e) => { e.stopPropagation(); handleMoveLeft(); }}
+              />
+            </Tooltip>
+          ) : (
+            <ArrowLeftOutlined
+              key="move-left-disabled"
+              style={{ color: '#8c8c8c', fontSize: 16, cursor: 'not-allowed' }}
+            />
+          ),
+          canMoveRight ? (
+            <Tooltip key="move-right" title="Move to next column">
+              <ArrowRightOutlined
+                style={{ color: '#1890ff', fontSize: 16 }}
+                onClick={(e) => { e.stopPropagation(); handleMoveRight(); }}
+              />
+            </Tooltip>
+          ) : (
+            <ArrowRightOutlined
+              key="move-right-disabled"
+              style={{ color: '#8c8c8c', fontSize: 16, cursor: 'not-allowed' }}
+            />
+          ),
           issue.timerActive ? (
             <div key="timer-controls" style={{ display: 'flex', justifyContent: 'center', gap: 12 }}>
               {timer.isPaused ? (
