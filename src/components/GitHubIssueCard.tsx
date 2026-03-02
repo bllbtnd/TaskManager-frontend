@@ -3,7 +3,8 @@ import { Card, Tag, Space, Tooltip, Modal, Form, Input, Button } from 'antd';
 import { GithubOutlined, PlayCircleOutlined, PauseOutlined, StopOutlined, EditOutlined, ArrowLeftOutlined, ArrowRightOutlined } from '@ant-design/icons';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import type { GitHubIssue, TaskStatus } from '../services/gitHubService';
+import type { GitHubIssue } from '../services/gitHubService';
+import type { TaskStatus } from '../services/taskService';
 import { gitHubService } from '../services/gitHubService';
 import { notificationService } from '../services/notificationService';
 import { useTaskTimer } from '../hooks/useTaskTimer';
@@ -51,7 +52,7 @@ const GitHubIssueCard: React.FC<GitHubIssueCardProps> = ({ issue, draggableId, p
     const newStatus = statusColumns[currentColumnIndex - 1].status;
     const targetState: 'open' | 'closed' = newStatus === 'DONE' ? 'closed' : 'open';
     try {
-      const updated = await gitHubService.updateGitHubIssueStatus(projectId, issue.id, targetState, newStatus);
+      await gitHubService.updateGitHubIssueStatus(projectId, issue.id, targetState, newStatus);
       onIssueUpdate({ ...issue, gitHubState: targetState, boardStatus: newStatus });
       notificationService.success(`Issue moved to ${newStatus.replace(/_/g, ' ')}`);
     } catch (error) {
@@ -64,7 +65,7 @@ const GitHubIssueCard: React.FC<GitHubIssueCardProps> = ({ issue, draggableId, p
     const newStatus = statusColumns[currentColumnIndex + 1].status;
     const targetState: 'open' | 'closed' = newStatus === 'DONE' ? 'closed' : 'open';
     try {
-      const updated = await gitHubService.updateGitHubIssueStatus(projectId, issue.id, targetState, newStatus);
+      await gitHubService.updateGitHubIssueStatus(projectId, issue.id, targetState, newStatus);
       onIssueUpdate({ ...issue, gitHubState: targetState, boardStatus: newStatus });
       notificationService.success(`Issue moved to ${newStatus.replace(/_/g, ' ')}`);
     } catch (error) {
