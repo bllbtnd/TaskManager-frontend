@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Button, Modal, Form, Input, Select, Spin, Space, DatePicker } from 'antd';
+import { Button, Modal, Form, Input, Select, Spin, Space, DatePicker, Checkbox } from 'antd';
 import { PlusOutlined, ArrowLeftOutlined, SettingOutlined, GithubOutlined, SyncOutlined } from '@ant-design/icons';
 import { notificationService } from '../services/notificationService';
 import {
@@ -91,8 +91,18 @@ const TaskBoard: React.FC = () => {
         await taskService.updateTask(projectId, editingTask.id, values);
         notificationService.success('Task updated successfully');
       } else {
-        await taskService.createTask(projectId, values);
+        const newTask = await taskService.createTask(projectId, values);
         notificationService.success('Task created successfully');
+        
+        // Create GitHub issue if checkbox was checked
+        if (values.createAsGitHubIssue && newTask.id) {
+          try {
+            await gitHubService.createGitHubIssue(projectId, newTask.id, values.title, values.description || '');
+            notificationService.success('GitHub issue created and linked');
+          } catch (error) {
+            notificationService.warning('Task created but GitHub issue creation failed');
+          }
+        }
       }
       setModalVisible(false);
       setEditingTask(null);
@@ -585,6 +595,12 @@ const TaskBoard: React.FC = () => {
               placeholder="Select deadline"
             />
           </Form.Item>
+
+          {!editingTask && project?.githubUrl && (
+            <Form.Item name="createAsGitHubIssue" valuePropName="checked">
+              <Checkbox>Create as GitHub Issue</Checkbox>
+            </Form.Item>
+          )}
 
           {editingTask && (
             <>

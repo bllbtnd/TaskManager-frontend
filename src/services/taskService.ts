@@ -30,6 +30,7 @@ export interface TaskRequest {
   deadline?: string;
   timeSpentMs?: number;
   activeWorkMs?: number;
+  createAsGitHubIssue?: boolean;
 }
 
 export const taskService = {
