@@ -135,14 +135,14 @@ const Settings: React.FC = () => {
   const handleDeleteAccount = async (values: { password?: string }) => {
     setDeleteLoading(true);
     try {
-      // Check if user has GitHub account (githubUsername exists in settings)
-      const isGitHubUser = settings?.githubUsername != null;
+      // Check if user has a password (GitHub-only users don't have passwords)
+      const isGitHubOnlyUser = !settings?.hasPassword && settings?.githubUsername != null;
       
-      if (isGitHubUser) {
-        // GitHub users don't need password
+      if (isGitHubOnlyUser) {
+        // GitHub-only users don't need password
         await userService.deleteAccount({ password: '' });
       } else {
-        // Regular users must provide password
+        // Email+password users must provide password
         if (!values.password) {
           message.error('Password is required');
           setDeleteLoading(false);
@@ -168,7 +168,7 @@ const Settings: React.FC = () => {
   };
 
   const showDeleteConfirmation = () => {
-    const isGitHubUser = settings?.githubUsername != null;
+    const isGitHubOnlyUser = !settings?.hasPassword && settings?.githubUsername != null;
     
     Modal.confirm({
       title: 'Delete Account',
@@ -185,19 +185,19 @@ const Settings: React.FC = () => {
             <li>All time logs and history</li>
             <li>All personal data</li>
           </ul>
-          {!isGitHubUser && <p>To confirm, please enter your password below:</p>}
-          {isGitHubUser && <p>Click "Delete Account" to confirm deletion.</p>}
+          {!isGitHubOnlyUser && <p>To confirm, please enter your password below:</p>}
+          {isGitHubOnlyUser && <p>Click "Delete Account" to confirm deletion.</p>}
         </div>
       ),
       okText: 'Delete Account',
       okType: 'danger',
       cancelText: 'Cancel',
       onOk: () => {
-        if (isGitHubUser) {
-          // For GitHub users, delete immediately
+        if (isGitHubOnlyUser) {
+          // For GitHub-only users, delete immediately
           handleDeleteAccount({});
         } else {
-          // For regular users, show password form
+          // For email+password users, show password form
           deleteForm.submit();
         }
       },
@@ -463,15 +463,15 @@ const Settings: React.FC = () => {
                     bordered={false}
                     className="settings-card"
                   >
-                    {settings?.githubUsername ? (
-                      // GitHub users don't have passwords
+                    {!settings?.hasPassword ? (
+                      // GitHub-only users don't have passwords
                       <div style={{ padding: '20px 0' }}>
                         <Text type="secondary">
-                          Your account is authenticated via GitHub. Password management is not available for GitHub accounts.
+                          Your account is authenticated via GitHub. Password management is not available for GitHub-only accounts.
                         </Text>
                       </div>
                     ) : (
-                      // Regular users can change password
+                      // Email+password users can change password
                       <Form
                         form={passwordForm}
                         layout="vertical"
@@ -599,7 +599,9 @@ const Settings: React.FC = () => {
                       {githubUsername ? (
                         <>
                           <div style={{ marginBottom: 16 }}>
-                            <Text strong>Connected as:</Text>
+                            <Text strong>
+                              {!settings?.hasPassword ? 'Logged in with GitHub:' : 'Connected as:'}
+                            </Text>
                             <Text style={{ display: 'block', marginTop: 8, color: '#1890ff' }}>
                               {githubUsername}
                             </Text>
@@ -607,9 +609,11 @@ const Settings: React.FC = () => {
                           <Text type="secondary" style={{ display: 'block', marginBottom: 16 }}>
                             You can now create tasks that sync to GitHub issues and close them when tasks are marked as done.
                           </Text>
-                          <Text type="secondary" style={{ display: 'block', marginBottom: 16, fontStyle: 'italic' }}>
-                            Note: If you signed up with GitHub, disconnecting will prevent you from logging in. To remove your account, use the Delete Account option instead.
-                          </Text>
+                          {!settings?.hasPassword && (
+                            <Text type="secondary" style={{ display: 'block', marginBottom: 16, fontStyle: 'italic' }}>
+                              Note: You signed up using GitHub. To remove your account, use the Delete Account option.
+                            </Text>
+                          )}
                         </>
                       ) : (
                         <>

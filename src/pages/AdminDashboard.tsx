@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Table, Button, Tag, Space, Statistic, Row, Col, Tabs, Modal, Drawer, Collapse, Empty, Spin, Descriptions } from 'antd';
+import { Card, Table, Button, Tag, Space, Statistic, Row, Col, Tabs, Modal, Drawer, Collapse, Empty, Spin, Descriptions, Select } from 'antd';
 import { CheckOutlined, CloseOutlined, TeamOutlined, ClockCircleOutlined, DeleteOutlined, FolderOutlined, CheckSquareOutlined, EyeOutlined } from '@ant-design/icons';
 import { userService } from '../services/userService';
 import { bugReportService } from '../services/bugReportService';
 import { notificationService } from '../services/notificationService';
+import { authService } from '../services/authService';
 import type { User, UserStats, UserProjectDetail } from '../services/userService';
 import type { BugReport } from '../services/bugReportService';
 
@@ -24,6 +25,13 @@ const AdminDashboard: React.FC = () => {
   const [userProjects, setUserProjects] = useState<UserProjectDetail[]>([]);
   const [loadingProjects, setLoadingProjects] = useState(false);
   const [drawerVisible, setDrawerVisible] = useState(false);
+  const isGlobalAdmin = authService.isGlobalAdmin();
+
+  // Helper function to check if a user is the last GLOBAL_ADMIN
+  const isLastGlobalAdmin = (user: User): boolean => {
+    const globalAdminCount = allUsers.filter(u => u.role === 'GLOBAL_ADMIN').length;
+    return user.role === 'GLOBAL_ADMIN' && globalAdminCount === 1;
+  };
 
   useEffect(() => {
     fetchData();
@@ -92,6 +100,16 @@ const AdminDashboard: React.FC = () => {
         }
       },
     });
+  };
+
+  const handleRoleChange = async (userId: string, newRole: string) => {
+    try {
+      await userService.updateUserRole(userId, newRole);
+      notificationService.success('User role updated successfully');
+      fetchData();
+    } catch (error) {
+      notificationService.error('Failed to update user role');
+    }
   };
 
   const handleResolveBugReport = async (reportId: string) => {
@@ -171,7 +189,26 @@ const AdminDashboard: React.FC = () => {
       title: 'Role',
       dataIndex: 'role',
       key: 'role',
-      render: (role: string) => <Tag color="blue">{role}</Tag>,
+      render: (role: string, record: User) => {
+        const isLast = isLastGlobalAdmin(record);
+        return isGlobalAdmin ? (
+          <Tooltip title={isLast ? "Cannot change role of last GLOBAL_ADMIN" : ""}>
+            <Select
+              value={role}
+              onChange={(value) => handleRoleChange(record.id, value)}
+              style={{ width: 150 }}
+              size="small"
+              disabled={isLast}
+            >
+              <Select.Option value="GENERAL_USER">GENERAL_USER</Select.Option>
+              <Select.Option value="ADMIN">ADMIN</Select.Option>
+              <Select.Option value="GLOBAL_ADMIN">GLOBAL_ADMIN</Select.Option>
+            </Select>
+          </Tooltip>
+        ) : (
+          <Tag color="blue">{role}</Tag>
+        );
+      },
     },
     {
       title: 'Status',
@@ -191,26 +228,34 @@ const AdminDashboard: React.FC = () => {
     {
       title: 'Actions',
       key: 'actions',
-      render: (_: any, record: User) => (
-        <Space>
-          <Button
-            type="primary"
-            icon={<EyeOutlined />}
-            onClick={() => handleViewUserDetails(record)}
-            size="small"
-          >
-            View Details
-          </Button>
-          <Button
-            danger
-            icon={<DeleteOutlined />}
-            onClick={() => handleDeleteUser(record.id, `${record.firstName} ${record.lastName}`)}
-            size="small"
-          >
-            Delete
-          </Button>
-        </Space>
-      ),
+      render: (_: any, record: User) => {
+        const isLast = isLastGlobalAdmin(record);
+        return (
+          <Space>
+            <Button
+              type="primary"
+              icon={<EyeOutlined />}
+              onClick={() => handleViewUserDetails(record)}
+              size="small"
+            >
+              View Details
+            </Button>
+            {isGlobalAdmin && (
+              <Tooltip title={isLast ? "Cannot delete last GLOBAL_ADMIN" : ""}>
+                <Button
+                  danger
+                  icon={<DeleteOutlined />}
+                  onClick={() => handleDeleteUser(record.id, `${record.firstName} ${record.lastName}`)}
+                  size="small"
+                  disabled={isLast}
+                >
+                  Delete
+                </Button>
+              </Tooltip>
+            )}
+          </Space>
+        );
+      },
     },
   ];
 

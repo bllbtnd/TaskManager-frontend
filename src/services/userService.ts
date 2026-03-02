@@ -40,6 +40,7 @@ export interface UserSettings {
   totalTasks: number;
   totalTimeSpentMs: number;
   githubUsername?: string;
+  hasPassword?: boolean;
 }
 
 export interface ChangePasswordRequest {
@@ -156,6 +157,11 @@ export const userService = {
 
   updateEmailPreferences: async (preferences: EmailPreferences): Promise<EmailPreferences> => {
     const response = await api.put('/users/email-preferences', preferences);
+    return response.data;
+  },
+
+  updateUserRole: async (userId: string, role: string): Promise<User> => {
+    const response = await api.put(`/users/${userId}/role`, { role });
     return response.data;
   },
 };

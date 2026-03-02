@@ -50,6 +50,11 @@ export const authService = {
 
   isAdmin: (): boolean => {
     const user = authService.getCurrentUser();
+    return user?.role === 'GLOBAL_ADMIN' || user?.role === 'ADMIN';
+  },
+
+  isGlobalAdmin: (): boolean => {
+    const user = authService.getCurrentUser();
     return user?.role === 'GLOBAL_ADMIN';
   },
 
