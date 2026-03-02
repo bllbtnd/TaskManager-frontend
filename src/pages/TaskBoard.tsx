@@ -87,6 +87,7 @@ const TaskBoard: React.FC = () => {
   const handleCreateOrUpdate = async (values: TaskRequest) => {
     if (!projectId) return;
     try {
+      console.log('handleCreateOrUpdate called with values:', values);
       if (editingTask) {
         await taskService.updateTask(projectId, editingTask.id, values);
         notificationService.success('Task updated successfully');
@@ -97,10 +98,13 @@ const TaskBoard: React.FC = () => {
         // Create GitHub issue if checkbox was checked
         if (values.createAsGitHubIssue && newTask.id) {
           try {
+            console.log('Creating GitHub issue for task:', newTask.id);
             await gitHubService.createGitHubIssue(projectId, newTask.id, values.title, values.description || '');
             notificationService.success('GitHub issue created and linked');
           } catch (error) {
-            notificationService.warning('Task created but GitHub issue creation failed');
+            console.error('GitHub issue creation error:', error);
+            const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+            notificationService.warning(`Task created but GitHub issue failed: ${errorMsg}`);
           }
         }
       }
@@ -555,6 +559,7 @@ const TaskBoard: React.FC = () => {
             deadline: values.deadline ? values.deadline.toISOString() : undefined,
             activeWorkMs: activeWorkMs,
             timeSpentMs: timeSpentMs,
+            createAsGitHubIssue: values.createAsGitHubIssue || false,
           };
           handleCreateOrUpdate(request);
         }} layout="vertical">
